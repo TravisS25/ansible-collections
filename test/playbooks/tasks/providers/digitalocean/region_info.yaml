@@ -1,0 +1,5 @@
+---
+- name: Gather region info from digital ocean
+  community.digitalocean.digital_ocean_region_info:
+    oauth_token: "{{ oauth_token }}"
+  register: pb_region_info

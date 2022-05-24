@@ -1,0 +1,4 @@
+- name: Local region info
+  community.digitalocean.digital_ocean_region_info:
+    oauth_token: "{{ ansible_env.DO_API_KEY }}"
+  register: pb_region_info

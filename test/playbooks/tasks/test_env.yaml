@@ -1,0 +1,10 @@
+- name: display env variables
+  hosts: localhost
+
+  tasks:
+    - name: Display
+      debug:
+        msg: "{{ ansible_env }}"
+    - name: Display some list
+      debug:
+        msg: "{{ pb_provider_list }}"

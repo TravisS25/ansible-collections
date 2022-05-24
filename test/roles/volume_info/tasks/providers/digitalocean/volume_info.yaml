@@ -1,0 +1,5 @@
+- name: Digital Ocean Volume Info
+  community.digitalocean.digital_ocean_volume_info:
+    oauth_token: "{{ oauth_token | mandatory }}"
+    region_name: "{{ region | mandatory }}"
+  register: pb_volume_return

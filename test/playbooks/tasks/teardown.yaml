@@ -1,0 +1,6 @@
+---
+- name: Teardown Enviroment
+  hosts: localhost
+
+  tasks:
+    - name: Setting setup facts

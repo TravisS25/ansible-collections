@@ -1,0 +1,55 @@
+- name: Test Various Things
+  hosts: localhost
+  become: true
+  vars_files:
+    - ../vars/test_vars.yaml
+  vars:
+    vagrant_dir: /etc/test-vagrant
+    vagrant_file: "{{ vagrant_dir }}/Vagrantfile"
+    var_vagrant_box: "{{ vagrant_box | default('peru/ubuntu-20.04-server-amd64') }}"
+    vagrant_file_txt: |
+      Vagrant.configure("2") do |config|
+        config.vm.box = "{{ var_vagrant_box }}"
+        config.vm.provision "shell", inline: $set_environment_variables, run: "once"
+
+        config.vm.provision "ansible_local" do |ansible|
+          ansible.playbook = "playbook.yml"
+          ansible.verbose = true
+          ansible.install_mode = "pip"
+          ansible.version = "2.2.1.0"
+        end
+      end
+    volumes_from_server:
+      - nyc1_volume
+      - nyc2_volume
+      - nyc3_volume
+    new_volumes:
+      - nyc4_volume
+      - nyc5_volume
+    object_list:
+      - name: foo
+        email: foo@email.com
+      - name: bar
+        email: bar@email.com
+  vars_prompt:
+    - name: version
+      prompt: What version do you want?
+      private: no
+
+  tasks:
+    - name: Create directory
+      file:
+        path: "{{ vagrant_dir }}"
+        state: directory
+    - name: Delete exiting test vagrant file
+      file:
+        path: "{{ vagrant_file }}"
+        state: absent
+    - name: Creating vagrant file
+      file:
+        path: "{{ vagrant_file }}"
+        state: touch
+    - name: Write to vagrant file
+      lineinfile:
+        path: "{{ vagrant_file }}"
+        line: "{{ vagrant_file_txt }}"

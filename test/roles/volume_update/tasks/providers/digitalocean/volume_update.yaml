@@ -1,0 +1,5 @@
+- name: Create/Update volume(s)
+  community.digitalocean.digital_ocean_block_storage:
+    volume_name: "{{ item.volume_name }}"
+    description: "{{ item.volume_description | default(null) }}"
+  with_items: "{{ volume_objects }}"

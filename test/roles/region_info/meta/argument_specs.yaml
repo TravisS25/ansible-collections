@@ -1,0 +1,10 @@
+---
+argument_specs:
+  main:
+    short_description: The main entry point for the region info role.
+    options:
+      provider:
+        type: "str"
+        required: true
+        choices: "{{ host_provider_list }}"
+        description: The provider to gather region info about

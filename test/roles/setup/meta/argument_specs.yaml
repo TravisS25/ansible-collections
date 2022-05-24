@@ -1,0 +1,11 @@
+---
+argument_specs:
+  main:
+    short_description: The main entry point for the setup role.
+    options:
+      provider:
+        type: "str"
+        choices: "{{ host_provider_list }}"
+        description: |
+          The provider user wishes to use to provision droplet and other assests
+          Will be promted for choice

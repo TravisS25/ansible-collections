@@ -1,0 +1,10 @@
+- name: Assert proper provider given for auto run type
+  assert:
+    that: 
+      - provider is defined
+      - provider in host_provider_list
+    fail_msg: "Invalid provider '{{ provider }}' "
+- name: Set setup facts
+  set_fact:
+    pb_provider: "{{ provider }}"
+    pb_run_type: auto

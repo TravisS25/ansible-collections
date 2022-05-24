@@ -1,0 +1,11 @@
+---
+- name: Local Setup
+  hosts: localhost
+  vars_files:
+    - ../../../vars/providers/local/secrets.yaml
+
+  tasks:
+    - name: Setting base local facts
+      set_fact:
+        pb_timeout: "{{ timeout | default(30) }}"
+        pb_oauth_token: "{{ oauth_token }}"

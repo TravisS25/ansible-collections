@@ -1,0 +1,12 @@
+---
+- name: Assert provider list matches dictionary
+  assert:
+    that: lookup('dict', item) is defined
+    fail_msg: "Provider {{ item }} does not exist in provider dict"
+  with_items: "{{ host_provider_list }}"
+- name: Import prompt task
+  import_task: prompt.yaml
+  when: run_type is not defined and run_type != 'auto'
+- name: Import auto task
+  import_task: auto.yaml
+  when: run_type is defined and run_type == 'auto'

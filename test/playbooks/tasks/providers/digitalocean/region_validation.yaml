@@ -1,0 +1,28 @@
+---
+- name: Import digital ocean region info playbook
+  import_playbook: region_info.yaml
+  vars:
+    run_type: "{{ pb_run_type }}"
+    oauth_token: "{{ pb_oauth_token }}"
+    fail_api_call: "{{ fail_region_api_call | default(false) }}"
+
+- name:  Digital Ocean Region Validation
+  hosts: localhost
+ 
+  tasks:
+    - name: Assert valid region
+      assert:
+        that: region in pb_region_slugs
+        fail_msg: 'Invalid region "{{ region }}".  Valid regions are {{ pb_region_slugs }}'
+    - name: Set region facts
+      set_fact:
+        pb_current_region: "{{ pb_region_dict[region] }}"
+    - name: Assert region is available
+      assert:
+        that: pb_current_region.available
+        fail_msg: 'Region "{{ pb_current_region }}" is not available'
+    - name: Assert droplet feature
+      assert:
+        that: droplet_feature in current_region.features
+        fail_msg: 'Invalid droplet feature "{{ droplet_feature }}".  Valid droplet features are {{ pb_current_region.features }}'
+      when: pb_droplet_feature is defined
