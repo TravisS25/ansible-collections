@@ -1,0 +1,2 @@
+storage_path: /mnt/storage/prometheus
+docker_action: start

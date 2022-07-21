@@ -6,5 +6,5 @@ argument_specs:
       provider:
         type: "str"
         required: true
-        choices: "{{ host_provider_list }}"
+        choices: "{{ localhost_provider_list }}"
         description: The provider to gather volume info about

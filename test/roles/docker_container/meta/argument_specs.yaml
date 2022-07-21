@@ -1,0 +1,32 @@
+---
+docker_container_options: &docker_container_options_ref
+  docker_image:
+    type: "str"
+    required: true
+    description: Docker image to use
+  storage_path:
+    type: "str"
+    required: true
+    description: Default storage directory docker container writes to on host
+  docker_action:
+    type: "str"
+    required: true
+    default: start
+    choices:
+      - start
+      - stop
+      - restart
+    description: Determine what action to perform on docker container
+
+argument_specs:
+  cockroachdb:
+    short_description: Docker container actions for cockroachdb
+    options: *docker_container_options_ref
+  prometheus:
+    short_description: Docker container actions for prometheus
+    options:
+      <<: *docker_container_options_ref
+      config_file:
+        type: "str"
+        required: true
+        description: Config file for prometheus

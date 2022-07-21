@@ -1,0 +1,24 @@
+---
+argument_specs:
+  update_hosts_file:
+    short_description: Updates host file
+    description: |
+      Updates host file for lab dns purposes and should only be used on puppet master node
+    options:
+      dns_records:
+        type: list
+        elements: dict
+        required: true
+        options:
+          ip:
+            type: str
+            required: true
+            description: IP address of agent host
+          hostname:
+            type: str
+            required: true
+            description: Hostname of agent host
+          fqdn:
+            type: str
+            required: true
+            description: FQDN of agent host

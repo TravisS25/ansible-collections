@@ -1,0 +1,43 @@
+---
+- name: Setup droplet
+  hosts: "{{ host }}"
+
+  pre_tasks:
+    - name: Assert host passed
+      assert:
+        that: host is defined
+        fail_msg: Variable "host" not defined
+    - name: Assert that server_type_list is defined
+      assert:
+        that:
+          - server_type_list is defined
+          - (server_type_list | type_debug == "list")
+        fail_msg: Variable "server_type_list" should be defined and a list
+    - name: Verify all items in list exist
+      assert:
+        that: all_defaults.server_type[item] is defined
+      with_item: "{{ server_type_list }}"
+
+  tasks:
+    - name: Import docker install role
+      import_role:
+        name: docker
+        tasks_from: install
+      vars:
+        username: "{{ username | default({{ all_defaults.box.username }}) }}"
+
+    - name: Import docker role images(s)
+      import_role:
+        name: docker_image
+        tasks_from: pull
+      vars:
+        docker_image: "{{ all_defaults.server_type[{{ item }}].docker_image }}"
+      with_items: "{{ server_type_list }}"
+
+    - name: Import docker role container(s)
+      import_role:
+        name: docker_container
+        tasks_from: "{{ all_defaults.server_type[{{ item }}].docker_container_role }}"
+      vars:
+        docker_image: "{{ all_defaults.server_type[{{ item }}].docker_image }}"
+      with_item: "{{ server_type_list }}"

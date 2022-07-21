@@ -1,0 +1,115 @@
+---
+- name: Update repositories
+  apt:
+    update_cache: yes
+
+- name: Set facts
+  set_fact:
+    puppet_pkg_path: /tmp/puppet-release.deb
+    puppet_conf_path: /etc/puppetlabs/puppet/puppet.conf
+
+- name: Download puppet repo package
+  get_url:
+    url: https://apt.puppet.com/puppet7-release-focal.deb
+    dest: "{{ puppet_pkg_path }}"
+
+- name: Install puppet repo package
+  shell: "dpkg -i {{ puppet_pkg_path }}"
+
+- name: Re-update repositories
+  apt:
+    update_cache: yes
+
+- name: Debug within
+  debug:
+    msg: "{{ agent }}"
+# - name: Setup puppet master settings
+#   when: puppet_type == 'master'
+#   block:
+#     - name: Install puppet master
+#       apt:
+#         name: puppetserver
+
+#     - name: Check if master section exists
+#       lineinfile:
+#         path: "{{ puppet_conf_path }}"
+#         regexp: "[master]"
+#         state: absent
+#       check_mode: yes
+#       changed_when: false
+#       register: puppet_master_check
+
+#     - name: Update puppet conf master section
+#       lineinfile:
+#         path: "{{ puppet_conf_path }}"
+#         regexp: "{% if puppet_master_check.found %}[master]{% endif %}"
+#         insertafter: |
+#           {% if not puppet_master_check.found %}[master]{% endif %}
+#           dns_alt_names =
+#           {{ master_hostname }},
+#           {{ master_fqdn }}
+
+#     - name: Check if main section exists
+#       lineinfile:
+#         path: "{{ puppet_conf_path }}"
+#         regexp: "[main]"
+#         state: absent
+#       check_mode: yes
+#       changed_when: false
+#       register: puppet_main_check
+
+#     - name: Update puppet conf main section
+#       lineinfile:
+#         path: "{{ puppet_conf_path }}"
+#         regexp: "{% if puppet_main_check.found %}[main]{% endif %}"
+#         insertafter: |
+#           {% if not puppet_main_check.found %}[main]{% endif %}
+#           certname = {{ master_fqdn }}
+#           server = {{ master_hostname }}
+
+#     - name: Start puppetserver
+#       systemd:
+#         name: puppetserver
+#         enabled: yes
+#         state: started
+
+#     - name: Start puppet agent on puppet server
+#       systemd:
+#         name: puppet
+#         enabled: yes
+#         state: started
+
+# - name: Setup puppet agent settings
+#   when: puppet_type == 'agent'
+#   block:
+#     - name: Install puppet agent
+#       apt:
+#         repo: puppet-agent
+
+#     - name: Check if main section exists
+#       lineinfile:
+#         path: "{{ puppet_conf_path }}"
+#         regexp: "[main]"
+#         state: absent
+#       check_mode: yes
+#       changed_when: false
+#       register: puppet_main_check
+
+#     - name: Update puppet conf main section
+#       lineinfile:
+#         path: "{{ puppet_conf_path }}"
+#         regexp: "{% if puppet_main_check.found %}[main]{% endif %}"
+#         insertafter: |
+#           {% if not puppet_main_check.found %}[main]{% endif %}
+#           certname = {{ agent.fqdn }}
+#           server = {{ master_hostname }}
+
+#     - name: Bootstrap ssl for agent
+#       shell: /opt/puppetlabs/puppet/bin/puppet ssl bootstrap
+
+#     - name: Approve certname request of agent from master server
+#       delegate_to: "{{ master_fqdn }}"
+#       shell: /opt/puppetlabs/puppet/bin/puppetserver ca sign --all
+
+#     - name: Bootstrap ssl for agent again
+#       shell: /opt/puppetlabs/puppet/bin/puppet ssl bootstrap

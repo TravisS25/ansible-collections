@@ -1,0 +1,33 @@
+---
+- name: Cockroachdb Container
+  hosts: cockroachdb
+
+  tasks:
+    # - name: Import docker install role
+    #   import_role:
+    #     name: docker
+    #     tasks_from: install
+    #   vars:
+    #     username: "{{ username | default({{ all_defaults.box.username }}) }}"
+
+    # - name: Import docker image role
+    #   import_role:
+    #     name: docker_image
+    #     tasks_from: pull
+    #   vars:
+    #     docker_image: "{{ all_defaults.server_type['cockroachdb'].docker_image }}"
+
+    - name: Import base docker task
+      import_task: base_docker.yaml
+      vars:
+        hosts: cockroachdb
+
+    - name: Import docker container role
+      import_role:
+        name: docker_container
+        tasks_from: "{{ all_defaults.server_type['cockroachdb'].docker_container_role }}"
+      vars:
+        docker_image: "{{ all_defaults.server_type['cockroachdb'].docker_image }}"
+        storage_path: "{{ storage_path }}"
+        docker_action: "{{ docker_action }}"
+        init_cockroachdb_cluster: "{{ init_cockroachdb_cluster }}"

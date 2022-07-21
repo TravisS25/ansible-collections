@@ -2,7 +2,7 @@
   set_fact:
     pb_server_volume_names: []
 - name: Import volume info task
-  import_task: "{{ host_providers[{{ provider }}].volume_info }}"
+  import_task: "{{ localhost_host_providers[{{ provider }}].volume_info }}"
 - name: Get volume names
   set_fact:
     pb_server_volume_names: "{{ pb_server_volume_names + [item.name] }}"

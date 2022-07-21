@@ -1,0 +1,3 @@
+storage_path: /mnt/storage/cockroachdb
+docker_action: start
+init_cluster: false

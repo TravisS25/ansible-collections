@@ -1,0 +1,37 @@
+---
+- name: Create minio storage path
+  file:
+    state: directory
+    path: "{{ storage_path }}"
+
+- name: Set minio container facts
+  set_fact:
+    minio_container: &minio_container_ref
+      name: minio
+      hostname: minio
+      image: "{{ docker_image }}"
+      restart_policy: always
+      publish_all_ports: yes
+      command: server /data --console-address ":9001"
+      mounts:
+        - source: "{{ storage_path }}"
+          target: /data
+
+- name: Run minio container
+  when: "{{ docker_action == 'start' }}"
+  community.docker.docker_container:
+    state: started
+    <<: *minio_container_ref
+
+- name: Restart minio container
+  when: "{{ docker_action == 'restart' }}"
+  community.docker.docker_container:
+    state: started
+    restart: yes
+    <<: *minio_container_ref
+
+- name: Stop minio container
+  when: "{{ docker_action == 'stop' }}"
+  community.docker.docker_container:
+    state: stopped
+    <<: *minio_container_ref

@@ -1,0 +1,47 @@
+---
+- name: Create cockroach storage path
+  file:
+    state: directory
+    path: "{{ storage_path }}"
+
+- name: Init cluster command
+  when: "{{ init_cluster }}"
+  set_fact:
+    command: "init --insecure --host={{ host }}"
+
+- name: Join cluster command
+  when: "{{ not init_cluster }}"
+  set_fact:
+    command: "start --insecure --join={{ host }}"
+
+- name: Set cockroachdb container facts
+  set_fact:
+    cockroachdb_container: &cockroachdb_container_ref
+      name: cockroachdb
+      hostname: cockroachdb
+      image: "{{ docker_image }}"
+      restart_policy: always
+      publish_all_ports: yes
+      command: start --insecure --join=roach
+      mounts:
+        - source: "{{ storage_path }}"
+          target: /cockroach/cockroach-data
+
+- name: Run cockroachdb container
+  when: "{{ docker_action == 'start' }}"
+  community.docker.docker_container:
+    state: started
+    <<: *cockroachdb_container_ref
+
+- name: Restart cockroachdb container
+  when: "{{ docker_action == 'restart' }}"
+  community.docker.docker_container:
+    state: started
+    restart: yes
+    <<: *cockroachdb_container_ref
+
+- name: Stop cockroachdb container
+  when: "{{ docker_action == 'stop' }}"
+  community.docker.docker_container:
+    state: stopped
+    <<: *cockroachdb_container_ref

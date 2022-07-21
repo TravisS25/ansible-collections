@@ -1,0 +1,4 @@
+dns_records:
+  ip: 192.168.3.3
+  hostname: puppetagent-1
+  fqdn: puppetagent-1.dev.com

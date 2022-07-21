@@ -1,0 +1,8 @@
+---
+- name: Update hosts file
+  lineinfile:
+    path: /etc/hosts
+    insertafter: |
+      {% for item in dns_records.items() %}
+      {{ item.ip }} {{ item.hostname }} {{ item.fqdn }}
+      {% endfor %}

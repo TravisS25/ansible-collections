@@ -1,0 +1,4 @@
+---
+- name: Create droplet by provider
+  import_tasks: "{{ localhost_host_providers[{{ provider }}].create_droplet }}"
+  vars: api_

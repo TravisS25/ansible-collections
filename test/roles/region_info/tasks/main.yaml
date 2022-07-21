@@ -5,7 +5,7 @@
     pb_region_output: {}
     pb_region_info_role_ran: true
 - name: Import region info tasks
-  import_tasks: "{{ host_providers[{{ provider }}].region_info }}"
+  import_tasks: "{{ localhost_host_providers[{{ provider }}].region_info }}"
 - name: Set region facts
   set_fact:
     pb_region_slugs: "{{ region_slugs + [item.slug] }}"

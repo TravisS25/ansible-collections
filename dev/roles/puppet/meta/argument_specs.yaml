@@ -1,0 +1,38 @@
+---
+argument_specs:
+  install:
+    short_description: Installs puppet
+    description: Installs puppet in dev environment
+    options:
+      puppet_type:
+        type: str
+        default: agent
+        choices:
+          - master
+          - agent
+        description: Determines
+      master_ip:
+        type: str
+        required: true
+        description: Puppet master ip
+      master_hostname:
+        type: str
+        required: true
+        description: Puppet master host name
+      master_fqdn:
+        type: str
+        required: true
+        description: Puppet master FQDN
+      agent:
+        type: dict
+        description: Optional dict used to indicate if current install is for agent if set
+        options:
+          ip:
+            type: str
+            required: true
+          hostname:
+            type: str
+            required: true
+          fqdn:
+            type: str
+            required: true
