@@ -1,0 +1,22 @@
+---
+- name: Import container action task for node_exporter
+  import_task: container_action.yaml
+  vars:
+    docker_action: "{{ docker_action }}"
+    container_params:
+      name: node_exporter
+      hostname: node_exporter
+      image: "{{ docker_image }}"
+      restart_policy: always
+      publish_all_ports: yes
+      command: |
+        --path.procfs=/host/proc \
+        --path.rootfs=/rootfs \
+        --path.sysfs=/host/sys
+      mounts:
+        - source: /proc
+          target: /cockroach/cockroach-data
+        - source: /sys
+          target: /host/sys:ro
+        - source: /
+          target: /rootfs:ro

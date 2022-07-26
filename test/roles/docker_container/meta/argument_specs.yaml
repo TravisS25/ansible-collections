@@ -1,27 +1,54 @@
 ---
+docker_action: &docker_action_ref
+  type: "str"
+  required: true
+  default: start
+  choices:
+    - start
+    - stop
+    - restart
+    - configure
+  description: Determine what action to perform on docker container
+
+storage_path: &storage_path_ref
+  type: "str"
+  required: true
+  description: Default storage directory docker container writes to on host
+
 docker_container_options: &docker_container_options_ref
   docker_image:
     type: "str"
     required: true
     description: Docker image to use
-  storage_path:
-    type: "str"
-    required: true
-    description: Default storage directory docker container writes to on host
   docker_action:
-    type: "str"
-    required: true
-    default: start
-    choices:
-      - start
-      - stop
-      - restart
-    description: Determine what action to perform on docker container
+    <<: *docker_action_ref
 
 argument_specs:
   cockroachdb:
     short_description: Docker container actions for cockroachdb
-    options: *docker_container_options_ref
+    options:
+      <<: *docker_container_options_ref
+      <<: *storage_path_ref
+  minio:
+    short_description: Docker container actions for minio
+    options:
+      protocol:
+        type: str
+        required: true
+        choices:
+          - http
+          - https
+      hostname:
+        type: str
+        required: true
+      num_of_drives:
+        type: int
+        required: true
+      num_of_hosts:
+        type: int
+        required: true
+      <<: *docker_container_options_ref
+      <<: *storage_path_ref
   prometheus:
     short_description: Docker container actions for prometheus
     options:
@@ -30,3 +57,12 @@ argument_specs:
         type: "str"
         required: true
         description: Config file for prometheus
+  container_action:
+    short_description: Determines docker container action
+    options:
+      docker_action:
+        <<: *docker_action_ref
+      container_params:
+        type: dict
+        required: true
+        description: Options for the community.docker.docker_container module

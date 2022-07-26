@@ -1,0 +1,27 @@
+---
+grafana_vars: &grafana_vars_ref
+  hello: "foo"
+
+prometheus_vars: &prometheus_vars_ref
+
+droplets:
+  - host: 192.168.2.2
+    mounts:
+      - device: /dev/sdb
+        mount_point: /mnt/minio1
+        fs: xfs
+      - device: /dev/sdc
+        mount_point: /mnt/minio2
+        fs: xfs
+    docker_types:
+      - name: grafana
+        vars:
+      - name: prometheus
+        vars:
+      - name: minio
+        vars:
+          storage_paths:
+            - /mnt/minio1
+            - /mnt/minio2
+      - name: minio_mc
+        vars:

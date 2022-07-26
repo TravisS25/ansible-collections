@@ -1,37 +1,33 @@
 ---
-- name: Create minio storage path
-  file:
-    state: directory
-    path: "{{ storage_path }}"
+- name: Pull minio client docker image
+  import_role:
+    name: docker_image
+    tasks_from: pull
+  vars:
+    docker_image: "{{ minio_mc_image }}"
 
-- name: Set minio container facts
+- name: Set minio facts
   set_fact:
-    minio_container: &minio_container_ref
+    mounts: []
+    disk_range: "{{ num_of_drives + 1 }}"
+    host_range: "{{ num_of_hosts + 1 }}"
+
+- name: Loop through mount range
+  loop: "{{ range(1, disk_range) }}"
+  set_fact:
+    mounts: "{{  }}"
+
+- name: Import container action task for minio
+  import_task: container_action.yaml
+  vars:
+    docker_action: "{{ docker_action }}"
+    container_params:
       name: minio
       hostname: minio
       image: "{{ docker_image }}"
       restart_policy: always
       publish_all_ports: yes
-      command: server /data --console-address ":9001"
+      command: "server {{ protocol }}://{{ hostname }}{1...{{ num_of_hosts }}}/data{1...{{ disk_range }}} --console-address ':9001'"
       mounts:
         - source: "{{ storage_path }}"
           target: /data
-
-- name: Run minio container
-  when: "{{ docker_action == 'start' }}"
-  community.docker.docker_container:
-    state: started
-    <<: *minio_container_ref
-
-- name: Restart minio container
-  when: "{{ docker_action == 'restart' }}"
-  community.docker.docker_container:
-    state: started
-    restart: yes
-    <<: *minio_container_ref
-
-- name: Stop minio container
-  when: "{{ docker_action == 'stop' }}"
-  community.docker.docker_container:
-    state: stopped
-    <<: *minio_container_ref

@@ -1,0 +1,4 @@
+---
+username: pac_user
+groups:
+  - sudo
