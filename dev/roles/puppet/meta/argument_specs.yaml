@@ -4,13 +4,10 @@ argument_specs:
     short_description: Installs puppet
     description: Installs puppet in dev environment
     options:
-      puppet_type:
+      master_remote_user:
         type: str
-        default: agent
-        choices:
-          - master
-          - agent
-        description: Determines
+        required: true
+        description: Remote user for master node that should have sudo privileges 
       master_ip:
         type: str
         required: true
@@ -34,5 +31,8 @@ argument_specs:
             type: str
             required: true
           fqdn:
+            type: str
+            required: true
+          user:
             type: str
             required: true

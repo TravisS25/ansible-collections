@@ -31,25 +31,42 @@
       block:
         - name: Include puppet vars
           include_vars:
-            file: "{{ puppet_install_vars_file | default('vars/puppet/install.yaml') }}"
+            file: "{{ puppet_install_vars_file | default('vars/puppet/install_vars.yaml') }}"
             name: file_vars
 
-        - name: Set host values
+        - name: Set facts from file
           set_fact:
-            master_vars: "{{ file_vars }}"
+            install_vars: "{{ file_vars }}"
 
-        - name: Import install task from puppet role
-          become: true
-          remote_user: "{{ hostvars['localhost']['file_vars'].remote_user }}"
-          delegate_to: "{{ hostvars['localhost']['file_vars'].master_ip }}"
+        - name: Import install task from puppet role for master
+          when: puppet_type == 'master'
+          remote_user: "{{ hostvars['localhost']['install_vars'].master_remote_user }}"
+          delegate_to: "{{ hostvars['localhost']['install_vars'].master_ip }}"
           import_role:
             name: puppet
             tasks_from: install
           vars:
-            master_ip: "{{ hostvars['localhost']['master_vars'].master_ip }}"
-            master_hostname: "{{ hostvars['localhost']['master_vars'].master_hostname }}"
-            master_fqdn: "{{ hostvars['localhost']['master_vars'].master_fqdn }}"
-            agent: "{{ hostvars['localhost']['master_vars'].agent | default(None) }}"
+            master_ip: "{{ hostvars['localhost']['install_vars'].master_ip }}"
+            master_hostname: "{{ hostvars['localhost']['install_vars'].master_hostname }}"
+            master_fqdn: "{{ hostvars['localhost']['install_vars'].master_fqdn }}"
+            master_remote_user: "{{ hostvars['localhost']['install_vars'].master_remote_user }}"
+
+        - name: Import install task from puppet role for agent
+          when: puppet_type == 'agent'
+          with_items: "{{ hostvars['localhost']['install_vars'].agents }}"
+          include_role:
+            name: puppet
+            tasks_from: install
+            apply:
+              become: true
+              remote_user: "{{ item.remote_user }}"
+              delegate_to: "{{ item.ip }}"
+          vars:
+            master_ip: "{{ hostvars['localhost']['install_vars'].master_ip }}"
+            master_hostname: "{{ hostvars['localhost']['install_vars'].master_hostname }}"
+            master_fqdn: "{{ hostvars['localhost']['install_vars'].master_fqdn }}"
+            master_remote_user: "{{ hostvars['localhost']['install_vars'].master_remote_user }}"
+            agent: "{{ item }}"
         # - name: Install puppet master
         #   when: puppet_type == 'master'
         #   block:
@@ -104,18 +121,19 @@
       block:
         - name: Include host file vars
           include_vars:
-            file: "{{ system_util_vars_file | default('vars/system_util/update_hosts_file/update_hosts_file_vars.yaml') }}"
+            file: "{{ system_util_vars_file | default('vars/system_util/update_hosts_file_vars.yaml') }}"
             name: file_vars
 
-        - name: Set host values
+        - name: Set facts from file
           set_fact:
-            system_util_vars: "{{ file_vars }}"
+            hosts_file_vars: "{{ file_vars }}"
 
         - name: Import update_hosts_file task from system_util role
           become: true
-          delegate_to: "{{ master_ip }}"
+          remote_user: "{{ hostvars['localhost']['hosts_file_vars'].remote_user }}"
+          delegate_to: "{{ hostvars['localhost']['hosts_file_vars'].master_ip }}"
           import_role:
             name: system_util
             tasks_from: update_hosts_file
           vars:
-            dns_records: "{{ dns_records }}"
+            dns_records: "{{ hostvars['localhost']['hosts_file_vars'].dns_records }}"

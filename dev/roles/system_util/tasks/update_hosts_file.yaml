@@ -1,8 +1,21 @@
 ---
-- name: Update hosts file
+- name: Set host file facts
+  set_fact:
+    dns: "{{ ip }} {{ hostname }} {{ fqdn }}"
+    host_path: /etc/hosts
+
+- name: Check host file for duplicates
   lineinfile:
-    path: /etc/hosts
-    insertafter: |
-      {% for item in dns_records.items() %}
-      {{ item.ip }} {{ item.hostname }} {{ item.fqdn }}
-      {% endfor %}
+    path: "{{ host_path }}"
+    regexp: "{{ dns }}"
+    state: absent
+  check_mode: yes
+  changed_when: false
+  register: dns_check
+
+- name: Update hosts file
+  when: not dns_check.found
+  lineinfile:
+    path: "{{ host_path }}"
+    state: present
+    line: "{{ dns }}"

@@ -1,8 +1,0 @@
-master_ip: 192.168.3.2
-master_hostname: puppetmaster
-master_fqdn: puppetmaster.dev.com
-
-agent:
-  ip: 192.168.3.3
-  hostname: puppetagent-1
-  fqdn: puppetagent-1.dev.com
