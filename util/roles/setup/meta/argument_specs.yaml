@@ -21,6 +21,7 @@ argument_specs:
         options:
           user_creds:
             type: dict
+            required: true
             description: User creds for droplet
             options:
               username:

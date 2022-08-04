@@ -15,7 +15,7 @@
 - name: Loop through mount range
   loop: "{{ range(1, disk_range) }}"
   set_fact:
-    mounts: "{{  }}"
+    mounts: "/mnt/{{  }}"
 
 - name: Import container action task for minio
   import_task: container_action.yaml

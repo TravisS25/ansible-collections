@@ -10,10 +10,11 @@ docker_action: &docker_action_ref
     - configure
   description: Determine what action to perform on docker container
 
-storage_path: &storage_path_ref
-  type: "str"
-  required: true
-  description: Default storage directory docker container writes to on host
+storage_path_options: &storage_path_options_ref
+  storage_path:
+    type: "str"
+    required: true
+    description: Default storage directory docker container writes to on host
 
 docker_container_options: &docker_container_options_ref
   image:
@@ -27,28 +28,39 @@ argument_specs:
   cockroachdb:
     short_description: Docker container actions for cockroachdb
     options:
-      <<: *docker_container_options_ref
-      <<: *storage_path_ref
+      <<: [*docker_container_options_ref, *storage_path_options_ref]
   minio:
     short_description: Docker container actions for minio
     options:
-      protocol:
-        type: str
-        required: true
-        choices:
-          - http
-          - https
-      hostname:
-        type: str
-        required: true
-      num_of_drives:
-        type: int
-        required: true
-      num_of_hosts:
-        type: int
-        required: true
-      <<: *docker_container_options_ref
-      <<: *storage_path_ref
+      filesystem_mode:
+        type: dict
+        description: Option to use when setting up one node and one drive
+        options:
+          drive_name:
+            type: str
+            required: true
+            description: Name of the drive to mount at /mnt/<drive_name>
+      distributed_mode:
+        type: dict
+        description: Options to use when setting up multiple nodes/drives
+        options:
+          protocol:
+            type: str
+            required: true
+            description: Determines what protocol to use connect other nodes
+            choices:
+              - http
+              - https
+          hostname:
+            type: str
+            required: true
+          num_of_drives:
+            type: int
+            required: true
+          num_of_hosts:
+            type: int
+            required: true
+          <<: [*docker_container_options_ref, *storage_path_options_ref]
   prometheus:
     short_description: Docker container actions for prometheus
     options:

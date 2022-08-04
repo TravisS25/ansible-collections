@@ -7,6 +7,9 @@ minio_vars:
 
 droplets:
   - ip: 192.168.2.3
+    user_creds:
+      username: pac_user
+      password: password
     mounts:
       - device: /dev/sdb
         mount_point: "{{ minio_vars.minio1 }}"

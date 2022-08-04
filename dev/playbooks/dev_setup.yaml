@@ -1,6 +1,6 @@
 ---
 - name: Set up dev enviroment
-  droplets: localhost
+  hosts: localhost
   gather_facts: true
 
   pre_tasks:
@@ -17,7 +17,7 @@
 
     - name: Verify droplets
       loop: "{{ file_vars.droplets }}"
-      import_role:
+      include_role:
         name: traviss25.util.setup
         tasks_from: droplet
       vars:
@@ -35,7 +35,7 @@
         name: setup
         tasks_from: vagrant_install
 
-    - name: Verify vagrant
+    - name: Verify vagrant setup
       import_role:
         name: setup
         tasks_from: vagrant_setup
@@ -61,10 +61,10 @@
         tasks_from: pass_key
       vars:
         ip: "{{ item.ip }}"
-        password: "{{ item.password }}"
-        user: "{{ item.user }}"
+        user: "{{ item.user_creds.username }}"
+        password: "{{ item.user_creds.password }}"
 
-    - name: Update droplet files
+    - name: Import update droplet file role
       loop: "{{ file_vars.droplets | subelements('host_file_list') }}"
       include_role:
         name: system_util

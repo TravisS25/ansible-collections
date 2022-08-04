@@ -3,11 +3,14 @@
   stat:
     path: ~/.ssh
   register: ssh_dir
+
 - name: Generate ssh key
   when: not ssh_dir.stat.exists
   community.crypto.openssh_keypair:
     path: ~/.ssh/id_rsa
+
 - name: Scan ssh keys
   shell: "ssh-keyscan -H {{ ip }}"
+  
 - name: Pass key to remote server
   shell: "sshpass -p {{ password }} ssh-copy-id {{ user }}@{{ ip }}"

@@ -33,7 +33,7 @@
       register: confirm_prompt
       until: confirm_prompt.user_input == 'y' or confirm_prompt.user_input == 'n'
 
-    - name: Import
+    - name: Import droplet setup role
       when: confirm_prompt.user_input == 'y'
       loop: "{{ file_vars.droplets }}"
       become: true
