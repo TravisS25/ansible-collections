@@ -1,4 +1,0 @@
-run_types:
-  - prod
-  - local
-  - test

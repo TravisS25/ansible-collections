@@ -1,8 +1,0 @@
-- name: Get pac playbook config file path
-  set_fact:
-    config_file: "{{ lookup('env', 'PAC_ANSIBLE') }}"
-
-- name: Import config file to variable
-  include_vars:
-    file: "{{ config_file }}"
-    name: config

@@ -1,0 +1,18 @@
+---
+argument_specs:
+  ssh:
+    short_description: Sets up ssh remote access
+    description: Sets up ssh remote access so localhost user can log into machines by key
+    options:
+      ip:
+        type: str
+        required: true
+        description: IP of host we want to copy localhost ssh to
+      user:
+        type: str
+        required: true
+        description: User of remote host to copy ssh keys to
+      password:
+        type: str
+        required: true
+        description: Password of remote user to authenticate with

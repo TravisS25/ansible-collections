@@ -1,0 +1,7 @@
+---
+- name: Pull docker image
+  community.docker.image:
+    name: "{{ image }}"
+    source: pull
+    pull:
+      platform: amd64

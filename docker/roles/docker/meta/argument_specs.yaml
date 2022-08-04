@@ -1,0 +1,12 @@
+---
+argument_specs:
+  install:
+    short_description: Installs docker
+    description: Installs docker on box and will skip if already on box
+    options:
+      username:
+        type: str
+        description: Username to add to docker group that is created
+      docker_version:
+        type: str
+        default: 5:20.10.17~3-0~ubuntu-focal

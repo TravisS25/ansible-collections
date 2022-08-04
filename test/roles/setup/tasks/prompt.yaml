@@ -1,9 +1,0 @@
-- name: Enter provider
-  pause:
-    prompt: "What provider do you wish to use? (Choices: {{ pb_provider_list }})"
-  register: provider_input_result
-  until: provider_input_result.user_input in pb_provider_list
-- name: Set setup facts
-  set_fact:
-    pb_provider: "{{ provider_input_result.user_input }}"
-    pb_run_type: prompt

@@ -1,0 +1,10 @@
+---
+argument_specs:
+  pull:
+    short_description: Pulls docker image
+    description: Pulls docker image based on docker image name given
+    options:
+      image:
+        type: "str"
+        required: true
+        description: Name of docker image to pull

@@ -1,0 +1,199 @@
+---
+minio_vars:
+  minio1: /mnt/minio1
+  minio2: /mnt/minio2
+  minio3: /mnt/minio3
+  minio4: /mnt/minio4
+
+user_creds: &user_creds_ref
+  username: vagrant
+  password: vagrant
+
+host_file_list: &host_file_list_ref
+  - ip: 192.168.2.3
+    hostname: server1
+    fqdn: server1.pac.com
+  - ip: 192.168.2.3
+    hostname: minio1
+    fqdn: minio1.pac.com
+  - ip: 192.168.2.4
+    hostname: server2
+    fqdn: server2.pac.com
+  - ip: 192.168.2.4
+    hostname: minio2
+    fqdn: minio2.pac.com
+  - ip: 192.168.2.5
+    hostname: server3
+    fqdn: server3.pac.com
+  - ip: 192.168.2.5
+    hostname: minio3
+    fqdn: minio3.pac.com
+  - ip: 192.168.2.6
+    hostname: server4
+    fqdn: server4.pac.com
+  - ip: 192.168.2.6
+    hostname: minio4
+    fqdn: minio4.pac.com
+
+mounts: &mounts_ref
+  - device: /dev/sdb
+    mount_point: "{{ minio_vars.minio1 }}"
+    fstype: xfs
+  - device: /dev/sdc
+    mount_point: "{{ minio_vars.minio2 }}"
+    fstype: xfs
+  - device: /dev/sdd
+    mount_point: "{{ minio_vars.minio3 }}"
+    fstype: xfs
+  - device: /dev/sde
+    mount_point: "{{ minio_vars.minio4 }}"
+    fstype: xfs
+
+vagrant:
+  box: peru/ubuntu-20.04-server-amd64
+  project_root: ~/.vagrant_projects/pac
+  file_content: |
+    Vagrant.configure("2") do |config|
+      config.vm.define "server1" do |server1|
+          server1.vm.hostname = "server1"
+          server1.vm.box = "gusztavvargadr/ubuntu-server"
+          server1.vm.box_version = "2004.0.2205"
+          server1.vm.network "private_network", ip: "192.168.2.2", hostname: true
+          server1.vm.disk :disk, name: "ssd1", size: "20GB"
+          server1.vm.disk :disk, name: "ssd2", size: "20GB"
+          server1.vm.disk :disk, name: "ssd3", size: "20GB"
+          server1.vm.disk :disk, name: "ssd4", size: "20GB"
+
+          server1.vm.provider "virtualbox" do |v|
+              v.memory = 2048
+              v.cpus = 1
+              v.name = "server1"
+          end
+      end
+
+      config.vm.define "server2" do |server2|
+          server2.vm.hostname = "server2"
+          server2.vm.box = "gusztavvargadr/ubuntu-server"
+          server2.vm.box_version = "2004.0.2205"
+          server2.vm.network "private_network", ip: "192.168.2.3", hostname: true
+          server2.vm.disk :disk, name: "ssd1", size: "20GB"
+          server2.vm.disk :disk, name: "ssd2", size: "20GB"
+          server2.vm.disk :disk, name: "ssd3", size: "20GB"
+          server2.vm.disk :disk, name: "ssd4", size: "20GB"
+          server2.vm.disk :disk, name: "ssd5", size: "20GB"
+
+          server2.vm.provider "virtualbox" do |v|
+              v.memory = 2048
+              v.cpus = 1
+              v.name = "server2"
+          end
+      end
+      
+      config.vm.define "server3" do |server3|
+          server3.vm.hostname = "server3"
+          server3.vm.box = "gusztavvargadr/ubuntu-server"
+          server3.vm.box_version = "2004.0.2205"
+          server3.vm.network "private_network", ip: "192.168.2.4", hostname: true
+          server3.vm.disk :disk, name: "ssd1", size: "20GB"
+          server3.vm.disk :disk, name: "ssd2", size: "20GB"
+          server3.vm.disk :disk, name: "ssd3", size: "20GB"
+          server3.vm.disk :disk, name: "ssd4", size: "20GB"
+          server3.vm.disk :disk, name: "ssd5", size: "20GB"
+
+          server3.vm.provider "virtualbox" do |v|
+              v.memory = 2048
+              v.cpus = 1
+              v.name = "server3"
+          end
+      end
+
+      config.vm.define "server4" do |server4|
+          server4.vm.hostname = "server4"
+          server4.vm.box = "gusztavvargadr/ubuntu-server"
+          server4.vm.box_version = "2004.0.2205"
+          server4.vm.network "private_network", ip: "192.168.2.5", hostname: true
+          server4.vm.disk :disk, name: "ssd1", size: "20GB"
+          server4.vm.disk :disk, name: "ssd2", size: "20GB"
+          server4.vm.disk :disk, name: "ssd3", size: "20GB"
+          server4.vm.disk :disk, name: "ssd4", size: "20GB"
+          server4.vm.disk :disk, name: "ssd5", size: "20GB"
+
+          server4.vm.provider "virtualbox" do |v|
+              v.memory = 2048
+              v.cpus = 1
+              v.name = "server4"
+          end
+      end
+    end
+ca:
+  ip: 192.168.2.2
+  cn: "*.pac.com"
+droplets:
+  - ip: 192.168.2.3
+    user_creds:
+      <<: *user_creds_ref
+    host_file_list: *host_file_list_ref
+    mounts: *mounts_ref
+    docker_types:
+      - name: grafana
+        vars:
+      - name: prometheus
+        vars:
+      - name: minio
+        vars:
+          storage_paths:
+            - "{{ minio_vars.minio1 }}"
+            - "{{ minio_vars.minio2 }}"
+            - "{{ minio_vars.minio3 }}"
+            - "{{ minio_vars.minio4 }}"
+  - ip: 192.168.2.4
+    user_creds:
+      <<: *user_creds_ref
+    host_file_list: *host_file_list_ref
+    mounts: *mounts_ref
+    docker_types:
+      - name: grafana
+        vars:
+      - name: prometheus
+        vars:
+      - name: minio
+        vars:
+          storage_paths:
+            - "{{ minio_vars.minio1 }}"
+            - "{{ minio_vars.minio2 }}"
+            - "{{ minio_vars.minio3 }}"
+            - "{{ minio_vars.minio4 }}"
+  - ip: 192.168.2.5
+    user_creds:
+      <<: *user_creds_ref
+    host_file_list: *host_file_list_ref
+    mounts: *mounts_ref
+    docker_types:
+      - name: grafana
+        vars:
+      - name: prometheus
+        vars:
+      - name: minio
+        vars:
+          storage_paths:
+            - "{{ minio_vars.minio1 }}"
+            - "{{ minio_vars.minio2 }}"
+            - "{{ minio_vars.minio3 }}"
+            - "{{ minio_vars.minio4 }}"
+  - ip: 192.168.2.6
+    user_creds:
+      <<: *user_creds_ref
+    host_file_list: *host_file_list_ref
+    mounts: *mounts_ref
+    docker_types:
+      - name: grafana
+        vars:
+      - name: prometheus
+        vars:
+      - name: minio
+        vars:
+          storage_paths:
+            - "{{ minio_vars.minio1 }}"
+            - "{{ minio_vars.minio2 }}"
+            - "{{ minio_vars.minio3 }}"
+            - "{{ minio_vars.minio4 }}"

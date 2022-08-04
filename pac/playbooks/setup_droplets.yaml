@@ -1,0 +1,46 @@
+---
+- name: Setup droplet
+  hosts: localhost
+
+  pre_tasks:
+    - name: Assert import_file is defined
+      assert:
+        that: import_file is defined
+      fail_msg: Variable "import_file" is not defined
+
+  tasks:
+    - name: Include vars from file
+      include_vars:
+        file: "{{ import_file }}"
+        name: file_vars
+
+    - name: Verify droplets
+      loop: "{{ file_vars.droplets }}"
+      import_role:
+        name: traviss25.util.setup
+        tasks_from: droplet
+      vars:
+        execute: false
+        droplet: "{{ item }}"
+        default_docker_type: "{{ all_defaults.docker_type }}"
+
+    - name: Display settings before execute
+      pause:
+        prompt: |
+          These are the settings that will be applied. Proceed(y/n)?
+
+          {{ file_vars }}
+      register: confirm_prompt
+      until: confirm_prompt.user_input == 'y' or confirm_prompt.user_input == 'n'
+
+    - name: Import
+      when: confirm_prompt.user_input == 'y'
+      loop: "{{ file_vars.droplets }}"
+      become: true
+      delegate_to: "{{ item.ip }}"
+      include_role:
+        name: traviss25.util.setup
+        tasks_from: droplet
+      vars:
+        droplet: "{{ item }}"
+        default_docker_type: "{{ all_defaults.docker_type }}"

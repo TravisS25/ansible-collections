@@ -1,0 +1,80 @@
+---
+default_docker_type: &default_docker_type_ref
+  type: dict
+  required: true
+  description: Default set of docker types to be used if docker type is not found
+
+argument_specs:
+  droplet:
+    short_description: Creates droplet
+    description: Creates droplet based on settings passed
+    options:
+      execute:
+        type: boolean
+        default: true
+        description: Determines whether to execute task
+      default_docker_type: *default_docker_type_ref
+      droplet:
+        type: dict
+        required: true
+        description: The droplet that will be set up
+        options:
+          user_creds:
+            type: dict
+            description: User creds for droplet
+            options:
+              username:
+                type: str
+                required: true
+                description: Username that will be created for droplet
+              groups:
+                type: list
+                required: true
+                description: List of groups that the user will be apart of
+          mounts:
+            type: list
+            elements: dict
+            description: List of dicts that determine what device to mount and where
+            options:
+              mount_point:
+                type: str
+                required: true
+                description: Mount point to mount device
+              device:
+                type: str
+                required: true
+                description: Device to mount
+              fstype:
+                type: str
+                required: true
+                description: File system type to apply to disk
+          docker_types:
+            type: list
+            elements: dict
+            required: true
+            description: List of docker types to install on droplet
+            options:
+              name:
+                type: str
+                required: true
+                description: Docker type name to install on droplet
+              vars:
+                type: dict
+                description: Dict of variables that apply to docker type
+  droplet_docker_container:
+    short_description: Operate on docker container
+    description: Operate on docker container depending on docker type and run action
+    options:
+      docker_type:
+        type: dict
+        required: true
+        description: Docker type execute docker container
+        options:
+          name:
+            type: str
+            required: true
+            description: Name of the docker type
+          vars:
+            type: dict
+            description: Various variables needed to run current docker type
+      default_docker_type: *default_docker_type_ref

@@ -1,0 +1,22 @@
+---
+argument_specs:
+  vagrant_setup:
+    short_description: Setup vagrant
+    description: Setup vagrant environment with project Vagrantfile
+    options:
+      execute:
+        type: bool
+        default: true
+        description: Determines whether to execute task
+      box:
+        type: str
+        required: true
+        description: Vagrant box to use
+      project_root:
+        type: str
+        required: true
+        description: Root project folder to store vagrant info
+      file_content:
+        type: str
+        required: true
+        description: Vagrantfile contents

@@ -1,9 +1,0 @@
-- name: Create Storage Directory
-  file:
-    path: "{{ cockroach_storage_location }}"
-    state: directory
-
-- name: Pull Cockroachdb Docker Image
-  import_role:
-    name: traviss25.test.docker_image
-    tasks_from:
