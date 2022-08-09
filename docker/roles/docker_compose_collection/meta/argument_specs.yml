@@ -1,0 +1,47 @@
+---
+base_options: &base_options_ref
+  image:
+    type: str
+    required: true
+    description: Docker image for mariadb
+  storage_path:
+    type: str
+    required: true
+    description: Storage path on host to store db files
+
+argument_specs:
+  jasperreports:
+    short_description: Docker compose for jasperreports app
+    options:
+      password:
+        type: str
+        required: true
+        description: Password for app
+      allow_empty_password:
+        type: bool
+        default: yes
+        description: Determine whether to allow user to not use a password for app
+      sevices:
+        type: dict
+        required: true
+        description: Services for jasperreports app
+        options:
+          mariadb:
+            type: dict
+            required: true
+            description: Mariadb object for mariadb app settings
+            options:
+              <<: *base_options_ref
+          jasperreports:
+            type: dict
+            required: true
+            description: Jasperreports object for jasperreports app settings
+            options:
+              <<: *base_options_ref
+              ports:
+                type: list
+                default:
+                  - '80:8090'
+                description: List of ports to expose to host
+          
+          

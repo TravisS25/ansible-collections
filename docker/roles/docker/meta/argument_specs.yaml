@@ -24,8 +24,7 @@ argument_specs:
   container_action:
     short_description: Determines docker container action
     options:
-      action:
-        <<: *docker_action_ref
+      action: *docker_action_ref
       container_params:
         type: dict
         required: true

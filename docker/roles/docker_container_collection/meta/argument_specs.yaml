@@ -1,14 +1,4 @@
 ---
-docker_action: &docker_action_ref
-  type: str
-  required: true
-  default: start
-  description: Determine what action to perform on docker container
-  choices:
-    - start
-    - stop
-    - restart
-
 storage_path_options: &storage_path_options_ref
   storage_path:
     type: str
@@ -34,31 +24,28 @@ docker_container_options: &docker_container_options_ref
     required: true
     description: Docker image to use
   action:
-    <<: *docker_action_ref
+    type: str
+    required: true
+    default: start
+    description: Determine what action to perform on docker container
+    choices:
+      - start
+      - stop
+      - restart
 
 argument_specs:
   alert_manager:
     short_description: Docker container actions for alert manager
     options:
-      <<: [*docker_container_options_ref, *minio_options_ref]
+      <<: [*docker_container_options_ref, *storage_path_options_ref]
   cockroachdb:
     short_description: Docker container actions for cockroachdb
     options:
       <<: [*docker_container_options_ref, *storage_path_options_ref]
-  container_action:
-    short_description: Determines docker container action
-    options:
-      action:
-        <<: *docker_action_ref
-      container_params:
-        type: dict
-        required: true
-        description: Options for the community.docker.docker_container module
   minio:
     short_description: Docker container actions for minio
     options:
-      filesystem_mode:
-        <<: *minio_options_ref
+      filesystem_mode: *minio_options_ref
       distributed_mode:
         type: dict
         description: Options to use when setting up multiple nodes/drives
@@ -73,8 +60,7 @@ argument_specs:
   node_exporter:
     short_description: Docker container actions for node exporter
     options:
-      <<: [*docker_container_options_ref, *storage_path_options_ref]
+      <<: [*docker_container_options_ref]
   prometheus:
     short_description: Docker container actions for prometheus
-    options:
-      <<: *docker_container_options_ref
+    options: *docker_container_options_ref

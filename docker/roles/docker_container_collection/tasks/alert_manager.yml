@@ -2,7 +2,7 @@
 - name: Import container action task for alert manager
   import_task: container_action.yaml
   vars:
-    action: "{{ docker_action }}"
+    action: "{{ action }}"
     container_params:
       name: alert_manager
       hostname: alert_manager

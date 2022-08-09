@@ -96,24 +96,8 @@ argument_specs:
                     description: Number of cpus for vm
 
   libvirt_disk:
-    short_description: Creates/attaches disks for vm
+    short_description: Creates/attaches disks for libvirt vm
     options:
       vm_name: *vm_name_ref
       project_root: *project_root_ref
       disk: *disk_options_ref
-
-  update_hosts_file:
-    short_description: Updates host file
-    options:
-      ip:
-        type: str
-        required: true
-        description: IP address of agent host
-      hostname:
-        type: str
-        required: true
-        description: Hostname of agent host
-      fqdn:
-        type: str
-        required: true
-        description: FQDN of agent host

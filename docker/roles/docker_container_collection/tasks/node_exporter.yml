@@ -2,7 +2,7 @@
 - name: Import container action task for node_exporter
   import_task: container_action.yaml
   vars:
-    action: "{{ docker_action }}"
+    action: "{{ action }}"
     container_params:
       name: node_exporter
       hostname: node_exporter

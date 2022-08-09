@@ -1,0 +1,79 @@
+---
+- name: Create vagrant project directory if not exists
+  file:
+    path: "{{ project_root }}"
+    state: directory
+    mode: "0700"
+
+- name: Set vagrant facts
+  set_fact:
+    vagrant_file_path: "{{ project_root }}/Vagrantfile"
+
+- name: Remove old vagrant file
+  file:
+    path: "{{ vagrant_file_path }}"
+    state: absent
+
+- name: Creating vagrant file
+  file:
+    path: "{{ vagrant_file_path }}"
+    state: touch
+
+- name: Write to vagrant file
+  blockinfile:
+    path: "{{ vagrant_file_path }}"
+    block: |
+      Vagrant.configure("2") do |config|
+        {% for droplet in droplets %}
+        config.vm.define "{{ droplet.vagrant.name }}" do |machine|
+          machine.vm.hostname = {{ droplet.vagrant.hostname }}
+          machine.vm.box = {{ droplet.vagrant.box }}
+          {% if vm.box_version %}
+          machine.vm.box_version = {{ droplet.vagrant.box_version }}
+          {% endif %}
+          
+          machine.vm.network "public_network" ip: "{{ droplet.ip }}"
+
+          {% if droplet.vagrant.disks %}
+          {% for disk in droplet.vagrant.disks %}
+          machine.vm.disk :disk, name: "{{ disk.name }}", size: "{{ disk.size }}GB"
+          {% endfor %}
+          {% endif %}
+
+          {% if droplet.vagrant.specs %}
+          machine.vm.provider :{{ vm_provider }} do |v|
+            {% if v.memory %}
+            v.memory = {{ droplet.vagrant.specs.memory }}
+            {% endif %}
+            {% if v.cpus %}
+            v.cpus = {{ droplet.vagrant.specs.cpus }}
+            {% endif %}
+            {% if vm_provider == 'libvirt' %}
+            v.default_prefix = ""
+            {% endif %}
+          end
+          {% endif %}
+        end
+        {% endfor %}
+      end
+
+- name: Vagrant up
+  command:
+    chdir: "{{ project_root }}"
+    cmd: vagrant up --provider="{{ vm_provider }}"
+
+- name: Libvirt block
+  when: vm_provider == 'libvirt'
+  block:
+    - name: Libvirt disks block
+      when: vms.disks is defined and vms.disks | length > 0
+      block:
+        - name: Create/attach libvirt disks
+          loop: "{{ vms | subelements('disks') }}"
+          include_role:
+            name: setup
+            tasks_from: libvirt_disk
+          vars:
+            vm_name: "{{ item.0.name }}"
+            project_root: "{{ project_root }}"
+            disk: "{{ item.1 }}"

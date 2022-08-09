@@ -2,7 +2,7 @@
 - name: Assert minio settings are correct
   assert:
     that: distributed_mode is defined or filesystem_mode is defined
-    fail_msg: "distributed_mode" or "filesystem_mode" variable must be defiend
+    fail_msg: "'distributed_mode' or 'filesystem_mode' variable must be defined"
 
 - name: Distrubuted mode block
   when: distributed_mode

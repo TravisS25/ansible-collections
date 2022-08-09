@@ -1,5 +1,0 @@
----
-# tasks file for setup
-- name: Debug from main
-  debug:
-    msg: "{{ blah }}"

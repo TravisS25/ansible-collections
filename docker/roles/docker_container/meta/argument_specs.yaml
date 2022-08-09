@@ -45,15 +45,6 @@ argument_specs:
     short_description: Docker container actions for cockroachdb
     options:
       <<: [*docker_container_options_ref, *storage_path_options_ref]
-  container_action:
-    short_description: Determines docker container action
-    options:
-      action:
-        <<: *docker_action_ref
-      container_params:
-        type: dict
-        required: true
-        description: Options for the community.docker.docker_container module
   minio:
     short_description: Docker container actions for minio
     options:
