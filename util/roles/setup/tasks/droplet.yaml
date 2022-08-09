@@ -1,43 +1,41 @@
 ---
-- name: Droplet setup block
-  when: execute
-  block:
-    - name: Create user
-      when: droplet.user_creds
-      import_role:
-        name: user
-        tasks_from: create
-      vars:
-        username: "{{ droplet.user_creds.username }}"
-        groups: "{{ droplet.user_creds.groups }}"
+- name: Create user
+  when: droplet.user_creds
+  import_role:
+    name: user
+    tasks_from: create
+  vars:
+    username: "{{ droplet.user_creds.username }}"
+    password:
+    groups: "{{ droplet.user_creds.groups }}"
 
-    - name: Create filesystem and mount
-      when: droplet.mounts is defined
-      loop: "{{ droplet.mounts }}"
-      ansible.posix.mount:
-        path: "{{ item.mount_point }}"
-        src: "{{ item.device }}"
-        fstype: "{{ item.fstype }}"
-        state: mounted
+- name: Create filesystem and mount
+  when: droplet.mounts is defined
+  loop: "{{ droplet.mounts }}"
+  ansible.posix.mount:
+    path: "{{ item.mount_point }}"
+    src: "{{ item.device }}"
+    fstype: "{{ item.fstype }}"
+    state: mounted
 
-    - name: Import docker install role
-      import_role:
-        name: traviss25.docker.docker
-        tasks_from: install
-      vars:
-        username: "{{ droplet.user_creds.username }}"
+- name: Import docker install role
+  import_role:
+    name: traviss25.docker.docker
+    tasks_from: install
+  vars:
+    username: "{{ droplet.user_creds.username }}"
 
-    - name: Import docker role images(s)
-      loop: "{{ droplet.docker_types }}"
-      include_role:
-        name: traviss25.docker.docker_image
-        tasks_from: pull
-      vars:
-        image: "{{ item.image }}"
+- name: Import docker role images(s)
+  loop: "{{ droplet.docker_containers }}"
+  include_role:
+    name: traviss25.docker.docker
+    tasks_from: image_pull
+  vars:
+    image: "{{ item.image }}"
 
-    - name: Import droplet docker container task
-      loop: "{{ droplet.docker_types }}"
-      include_task: droplet_docker_container.yaml
-      vars:
-        droplet_type: "{{ item }}"
-        default_docker_type: "{{ default_docker_type }}"
+- name: Import droplet docker container task
+  loop: "{{ droplet.docker_containers }}"
+  include_task: droplet_docker_container.yaml
+  vars:
+    droplet_container: "{{ item }}"
+    default_docker_container: "{{ default_docker_container }}"

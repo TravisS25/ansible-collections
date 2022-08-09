@@ -1,22 +1,113 @@
 ---
+vm_provider: &vm_provider_ref
+  type: str
+  default: virtualbox
+  description: Determines what vm provider to install
+  choices:
+    - virtualbox
+    - libvirt
+
+project_root: &project_root_ref
+  type: str
+  required: true
+  description: Root project folder to store vagrant info
+
+disk_options: &disk_options_ref
+  name:
+    type: str
+    required: true
+    description: Name of disk
+  size:
+    type: int
+    required: true
+    description: Size of disk in GB
+
+vm_name: &vm_name_ref
+  type: str
+  required: true
+  description: Name of vm which should be unique
+
 argument_specs:
+  vm_provider_install:
+    short_description: Install vm provider
+    description: Determine what vm provider to install based on passed provider
+    options:
+      vm_provider: *vm_provider_ref
+
+  vagrant_install:
+    short_description: Install vagrant
+    description: Install vagrant and related plugins for provider
+    options:
+      vm_provider: *vm_provider_ref
+
   vagrant_setup:
     short_description: Setup vagrant
-    description: Setup vagrant environment with project Vagrantfile
+    description: Setup vagrant environment and generate Vagrantfile based on settings
     options:
-      execute:
-        type: bool
-        default: true
-        description: Determines whether to execute task
-      box:
+      vm_provider: *vm_provider_ref
+      project_root: *project_root_ref
+      droplets:
+        type: list
+        elements: dict
+        required: true
+        description: List of droplet objects that will help generate vagrant file
+        options:
+          ip:
+            type: str
+            required: true
+            description: IP address of droplet
+          hostname:
+            type: str
+            required: true
+            description: Hostname of machine that will be seen by other machines
+          vagrant:
+            type: dict
+            required: true
+            description: Object describing how vagrant will be set up for current droplet
+            options:
+              name: *vm_name_ref
+              box:
+                type: str
+                required: true
+                description: VM image to use
+              box_version:
+                type: str
+                description: Version of vm image to use
+              disks:
+                type: list
+                elements: dict
+                description: List of disk objects that is used to configure disk settings
+                options: *disk_options_ref
+              specs:
+                type: dict
+                description: Specs object to set up vm
+                options:
+                  memory:
+                    type: int
+                    description: Memory of vm in MB
+                  cpus:
+                    type: int
+                    description: Number of cpus for vm
+
+  libvirt_disk:
+    short_description: Creates/attaches disks for vm
+    options:
+      vm_name: *vm_name_ref
+      project_root: *project_root_ref
+      disk: *disk_options_ref
+
+  update_hosts_file:
+    short_description: Updates host file
+    options:
+      ip:
         type: str
         required: true
-        description: Vagrant box to use
-      project_root:
+        description: IP address of agent host
+      hostname:
         type: str
         required: true
-        description: Root project folder to store vagrant info
-      file_content:
+        description: Hostname of agent host
+      fqdn:
         type: str
         required: true
-        description: Vagrantfile contents
+        description: FQDN of agent host

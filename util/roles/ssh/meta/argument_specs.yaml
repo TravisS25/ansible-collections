@@ -1,6 +1,6 @@
 ---
 argument_specs:
-  ssh:
+  pass_key:
     short_description: Sets up ssh remote access
     description: Sets up ssh remote access so localhost user can log into machines by key
     options:

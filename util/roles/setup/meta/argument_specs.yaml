@@ -1,24 +1,60 @@
 ---
-default_docker_type: &default_docker_type_ref
+default_docker_container: &default_docker_container_ref
   type: dict
   required: true
   description: Default set of docker types to be used if docker type is not found
+
+docker_container_options: &docker_container_options_ref
+  name:
+    type: str
+    required: true
+    description: Docker container name to install on droplet
+  image:
+    type: str
+    required: true
+    description: Docker container image to install on droplet
+  action:
+    type: str
+    required: true
+    choices:
+      - start
+      - restart
+      - stop
+  vars:
+    type: dict
+    description: Dict of variables that apply to docker container
 
 argument_specs:
   droplet:
     short_description: Creates droplet
     description: Creates droplet based on settings passed
     options:
-      execute:
-        type: boolean
-        default: true
-        description: Determines whether to execute task
-      default_docker_type: *default_docker_type_ref
+      default_docker_container: *default_docker_container_ref
       droplet:
         type: dict
         required: true
         description: The droplet that will be set up
         options:
+          ip:
+            type: str
+            description: IP of droplet
+          host_file_list:
+            type: list
+            elements: dict
+            description: List of hosts to apply to /etc/hosts file
+            options:
+              ip:
+                type: str
+                required: true
+                description: IP of host to add to /etc/hosts file
+              hostname:
+                type: str
+                required: true
+                description: Hostname of host to add to /etc/hosts file
+              fqdn:
+                type: str
+                required: true
+                description: FQDN of host to add to /etc/hosts file
           user_creds:
             type: dict
             required: true
@@ -28,15 +64,27 @@ argument_specs:
                 type: str
                 required: true
                 description: Username that will be created for droplet
+              password:
+                type: str
+                required: true
+                description: Password for user that will be created for droplet
               groups:
                 type: list
                 required: true
                 description: List of groups that the user will be apart of
-          mounts:
+          disks:
             type: list
             elements: dict
             description: List of dicts that determine what device to mount and where
             options:
+              name:
+                type: str
+                required: true
+                description: Name of device
+              size:
+                type: int
+                required: true
+                description: Size of disk in GB
               mount_point:
                 type: str
                 required: true
@@ -49,7 +97,25 @@ argument_specs:
                 type: str
                 required: true
                 description: File system type to apply to disk
-          docker_types:
+          docker_compose:
+            type: list
+            elements: dict
+            description: List of docker compose objects
+            options:
+              project_name:
+                type: str
+                required: true
+                description: Project name of the docker compose to be executed
+              service:
+                type: dict
+                required: true
+                description: Object of services that are apart of this project
+                options:
+                  name:
+                    type: str
+                    required: true
+                    description:
+          docker_containers:
             type: list
             elements: dict
             required: true
@@ -58,18 +124,22 @@ argument_specs:
               name:
                 type: str
                 required: true
-                description: Docker type name to install on droplet
+                description: Docker container name to install on droplet
+              image:
+                type: str
+                required: true
+                description: Docker container image to install on droplet
               vars:
                 type: dict
-                description: Dict of variables that apply to docker type
+                description: Dict of variables that apply to docker container
   droplet_docker_container:
     short_description: Operate on docker container
     description: Operate on docker container depending on docker type and run action
     options:
-      docker_type:
+      docker_container:
         type: dict
         required: true
-        description: Docker type execute docker container
+        description: Docker type to run action against
         options:
           name:
             type: str
@@ -78,4 +148,4 @@ argument_specs:
           vars:
             type: dict
             description: Various variables needed to run current docker type
-      default_docker_type: *default_docker_type_ref
+      default_docker_container: *default_docker_container_ref

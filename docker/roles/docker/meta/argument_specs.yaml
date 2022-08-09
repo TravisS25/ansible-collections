@@ -1,4 +1,14 @@
 ---
+docker_action: &docker_action_ref
+  type: str
+  required: true
+  default: start
+  description: Determine what action to perform on docker container
+  choices:
+    - start
+    - stop
+    - restart
+
 argument_specs:
   install:
     short_description: Installs docker
@@ -10,3 +20,22 @@ argument_specs:
       docker_version:
         type: str
         default: 5:20.10.17~3-0~ubuntu-focal
+
+  container_action:
+    short_description: Determines docker container action
+    options:
+      action:
+        <<: *docker_action_ref
+      container_params:
+        type: dict
+        required: true
+        description: Options for the community.docker.docker_container module
+
+  image_pull:
+    short_description: Pulls docker image
+    description: Pulls docker image based on docker image name given
+    options:
+      image:
+        type: str
+        required: true
+        description: Name of docker image to pull

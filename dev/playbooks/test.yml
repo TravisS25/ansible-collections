@@ -1,0 +1,46 @@
+---
+- name: Foo
+  hosts: localhost
+
+  tasks:
+    - name: Import vars from file
+      include_vars:
+        file: "{{ import_file }}"
+        name: file_vars
+
+    - name: Import droplet argument specs
+      include_vars:
+        name: droplet_arg_specs
+        file: "{{ all_defaults.base_ansible_install_path }}/traviss25/util/roles/setup/meta/argument_specs.yaml"
+
+    - name: Import vagrant argument specs
+      include_vars:
+        name: vagrant_arg_specs
+        file: "{{ all_defaults.base_ansible_install_path }}/traviss25/dev/roles/setup/meta/argument_specs.yaml"
+
+    - name: Import ssh argument specs
+      include_vars:
+        name: ssh_arg_specs
+        file: "{{ all_defaults.base_ansible_install_path }}/traviss25/util/roles/ssh/meta/argument_specs.yaml"
+
+    - name: Import host file argument specs
+      include_vars:
+        name: host_file_arg_specs
+        file: "{{ all_defaults.base_ansible_install_path }}/traviss25/dev/roles/system_util/meta/argument_specs.yaml"
+
+    - name: Testing loop
+      loop: "{{ file_vars.config.droplets | subelements('vagrant.disks') }}"
+      debug:
+        msg: "{{ item.1 }}"
+
+    # - name: Debug
+    #   debug:
+    #     msg: "{{ droplet_arg_specs }}"
+
+    - name: Verify droplets setup
+      loop: "{{ file_vars.droplets }}"
+      validate_argument_spec:
+        argument_spec: "{{ droplet_arg_specs['argument_specs']['droplet']['options'] }}"
+        provided_arguments:
+          droplet: "{{ item }}"
+          default_docker_container: "{{ all_defaults.docker_container }}"

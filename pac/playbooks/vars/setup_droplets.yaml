@@ -23,7 +23,7 @@ droplets:
       - device: /dev/sde
         mount_point: "{{ minio_vars.minio4 }}"
         fstype: xfs
-    docker_types:
+    docker_containers:
       - name: grafana
       - name: prometheus
       - name: minio

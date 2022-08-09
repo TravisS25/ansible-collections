@@ -1,6 +1,10 @@
 ---
 all_defaults:
-  docker_type:
+  base_ansible_install_path: ~/.ansible/collections/ansible_collections
+  vm_providers:
+    - virtualbox
+    - libvirt
+  docker_container:
     grafana:
       image: grafana/grafana:9.0.4
       vars:

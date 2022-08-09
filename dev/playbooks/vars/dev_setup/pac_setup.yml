@@ -1,0 +1,183 @@
+---
+minio1_path: &minio1_path_ref /mnt/minio1
+minio2_path: &minio2_path_ref /mnt/minio2
+minio3_path: &minio3_path_ref /mnt/minio3
+minio4_path: &minio4_path_ref /mnt/minio4
+
+vm_box_image: &vm_box_image_ref generic/ubuntu2004
+
+user_creds: &user_creds_ref
+  username: vagrant
+  password: vagrant
+  groups:
+    - sudo
+
+host_file_list: &host_file_list_ref
+  - ip: 192.168.2.3
+    hostname: pac-server1
+    fqdn: pac-server1.pac.com
+  - ip: 192.168.2.3
+    hostname: minio1
+    fqdn: minio1.pac.com
+  - ip: 192.168.2.4
+    hostname: pac-server2
+    fqdn: pac-server2.pac.com
+  - ip: 192.168.2.4
+    hostname: minio2
+    fqdn: minio2.pac.com
+  - ip: 192.168.2.5
+    hostname: pac-server3
+    fqdn: pac-server3.pac.com
+  - ip: 192.168.2.5
+    hostname: minio3
+    fqdn: minio3.pac.com
+  - ip: 192.168.2.6
+    hostname: pac-server4
+    fqdn: pac-server4.pac.com
+  - ip: 192.168.2.6
+    hostname: minio4
+    fqdn: minio4.pac.com
+
+specs: &specs_ref
+  memory: 2048
+  cpus: 1
+
+mount1: &mount1_ref
+  device: /dev/sdb
+  mount_point: *minio1_path_ref
+  fstype: xfs
+mount2: &mount2_ref
+  device: /dev/sdc
+  mount_point: *minio2_path_ref
+  fstype: xfs
+mount3: &mount3_ref
+  device: /dev/sdd
+  mount_point: *minio3_path_ref
+  fstype: xfs
+mount4: &mount4_ref
+  device: /dev/sde
+  mount_point: *minio4_path_ref
+  fstype: xfs
+
+disks: &disks_ref
+  - name: sdb
+    size: 20
+  - name: sdc
+    size: 20
+  - name: sdd
+    size: 20
+  - name: sde
+    size: 20
+
+mounts: &mounts_ref
+  - *mount1_ref
+  - *mount2_ref
+  - *mount3_ref
+  - *mount4_ref
+
+# mounts: &mounts_ref
+#   - *mount1_ref
+#   - *mount2_ref
+#   - *mount3_ref
+#   - *mount4_ref
+
+config:
+  vm_provider: libvirt
+  project_root: ~/.vagrant_projects/pac/libvirt
+
+  ca_droplet:
+    ip: 192.168.2.2
+    user_creds: *user_creds_ref
+    cn: "*.pac.com"
+
+  droplets:
+    - ip: 192.168.2.3
+      hostname: pac-server2
+      user_creds: *user_creds_ref
+      host_file_list: *host_file_list_ref
+      mounts: &mounts_ref
+      vagrant:
+        name: pac-server2
+        box: *vm_box_image_ref
+        specs: *specs_ref
+        disks: *disks_ref
+      docker_compose:
+        - service:
+            mariadb:
+              vars:
+      docker_containers:
+        - name: grafana
+        - name: prometheus
+        - name: minio
+          vars:
+            storage_paths:
+              - *minio1_path_ref
+              - *minio2_path_ref
+              - *minio3_path_ref
+              - *minio4_path_ref
+    - ip: 192.168.2.4
+      hostname: pac-server3
+      user_creds: *user_creds_ref
+      host_file_list: *host_file_list_ref
+      mounts: &mounts_ref
+      vagrant:
+        name: pac-server3
+        box: *vm_box_image_ref
+        specs: *specs_ref
+        disks: *disks_ref
+      docker_containers:
+        - name: grafana
+          vars:
+        - name: prometheus
+          vars:
+        - name: minio
+          vars:
+            storage_paths:
+              - *minio1_path_ref
+              - *minio2_path_ref
+              - *minio3_path_ref
+              - *minio4_path_ref
+    - ip: 192.168.2.5
+      hostname: pac-server4
+      user_creds: *user_creds_ref
+      host_file_list: *host_file_list_ref
+      mounts: &mounts_ref
+      vagrant:
+        name: pac-server4
+        box: *vm_box_image_ref
+        specs: *specs_ref
+        disks: *disks_ref
+      docker_containers:
+        - name: grafana
+          vars:
+        - name: prometheus
+          vars:
+        - name: minio
+          vars:
+            storage_paths:
+              - *minio1_path_ref
+              - *minio2_path_ref
+              - *minio3_path_ref
+              - *minio4_path_ref
+    - ip: 192.168.2.6
+      user_creds: *user_creds_ref
+      host_file_list: *host_file_list_ref
+      mounts: &mounts_ref
+      vagrant:
+        name: pac-server5
+        hostname: pac-server5
+        box: *vm_box_image_ref
+        specs: *specs_ref
+        disks: *disks_ref
+      docker_containers:
+        - name: grafana
+          vars:
+        - name: prometheus
+          vars:
+        - name: minio
+          vars:
+            storage_paths:
+              - *minio1_path_ref
+              - *minio2_path_ref
+              - *minio3_path_ref
+              - *minio4_path_ref

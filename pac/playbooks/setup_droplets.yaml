@@ -20,11 +20,10 @@
         name: traviss25.util.setup
         tasks_from: droplet
       vars:
-        execute: false
         droplet: "{{ item }}"
-        default_docker_type: "{{ all_defaults.docker_type }}"
+        default_docker_container: "{{ all_defaults.docker_container }}"
 
-    - name: Display settings before execute
+    - name: Display settings before running play
       pause:
         prompt: |
           These are the settings that will be applied. Proceed(y/n)?
@@ -43,4 +42,4 @@
         tasks_from: droplet
       vars:
         droplet: "{{ item }}"
-        default_docker_type: "{{ all_defaults.docker_type }}"
+        default_docker_container: "{{ all_defaults.docker_container }}"

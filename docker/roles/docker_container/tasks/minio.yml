@@ -1,0 +1,47 @@
+---
+- name: Assert minio settings are correct
+  assert:
+    that: distributed_mode is defined or filesystem_mode is defined
+    fail_msg: "distributed_mode" or "filesystem_mode" variable must be defiend
+
+- name: Distrubuted mode block
+  when: distributed_mode
+  block:
+    - name: Loop through mount range
+      loop: "{{ range(1, distributed_mode.num_of_drives + 1) }}"
+      vars:
+        mount_point: "/mnt/minio{{ item }}"
+        target_point: "/data{{ item }}"
+      set_fact:
+        mounts: "{{ mounts | default([]) + [{'source': mount_point, 'target': target_point}] }}"
+
+    - name: Import container action task for minio distributed mode
+      import_task: container_action.yaml
+      vars:
+        action: "{{ distributed_mode.docker_action }}"
+        container_params:
+          name: minio
+          hostname: minio
+          image: "{{ distributed_mode.image }}"
+          restart_policy: always
+          publish_all_ports: yes
+          command: |
+            server {{ distributed_mode.protocol }}://{{ distributed_mode.hostname }}{1...{{ distributed_mode.num_of_hosts }}}/data{1...{{ distributed_mode.num_of_drives }}} \
+            --console-address ':9001'
+          mounts: "{{ mounts }}"
+
+- name: Import container action task for minio filesystem mode
+  when: filesystem_mode and not distributed_mode
+  import_task: container_action.yaml
+  vars:
+    action: "{{ docker_action }}"
+    container_params:
+      name: minio
+      hostname: minio
+      image: "{{ image }}"
+      restart_policy: always
+      publish_all_ports: yes
+      command: "server {{ protocol }}://{{ hostname }}/data --console-address ':9001'"
+      mounts: 
+        - source: /mnt/minio
+          target: /data

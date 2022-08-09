@@ -11,6 +11,6 @@
 
 - name: Scan ssh keys
   shell: "ssh-keyscan -H {{ ip }}"
-  
+
 - name: Pass key to remote server
   shell: "sshpass -p {{ password }} ssh-copy-id {{ user }}@{{ ip }}"
