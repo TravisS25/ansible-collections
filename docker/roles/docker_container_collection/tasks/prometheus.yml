@@ -3,12 +3,12 @@
   file:
     state: directory
     path: "{{ storage_path }}"
-    
+
 - name: Import container action task for prometheus
   import_task: container_action.yaml
   vars:
     action: "{{ action }}"
-    container_params:
+    params:
       name: prometheus
       hostname: prometheus
       image: "{{ image }}"

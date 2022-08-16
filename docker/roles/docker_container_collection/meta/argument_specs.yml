@@ -1,4 +1,9 @@
 ---
+cert_options: &cert_options_ref
+  cert:
+    type: dict
+    description: Settings for cert
+
 storage_path_options: &storage_path_options_ref
   storage_path:
     type: str
@@ -38,29 +43,43 @@ argument_specs:
     short_description: Docker container actions for alert manager
     options:
       <<: [*docker_container_options_ref, *storage_path_options_ref]
+
   cockroachdb:
     short_description: Docker container actions for cockroachdb
     options:
       <<: [*docker_container_options_ref, *storage_path_options_ref]
+
   minio:
     short_description: Docker container actions for minio
     options:
-      filesystem_mode: *minio_options_ref
+      <<: [*docker_container_options_ref, *storage_path_options_ref]
       distributed_mode:
         type: dict
-        description: Options to use when setting up multiple nodes/drives
+        description: Object for settings on distributed mode for minio
         options:
           num_of_drives:
             type: int
             required: true
+            description: Number of drives to attach to each node
           num_of_hosts:
             type: int
             required: true
-          <<: [*docker_container_options_ref, *minio_options_ref]
+            description: Number of hosts apart of cluster
+
   node_exporter:
     short_description: Docker container actions for node exporter
-    options:
-      <<: [*docker_container_options_ref]
+    options: *docker_container_options_ref
+
   prometheus:
     short_description: Docker container actions for prometheus
     options: *docker_container_options_ref
+
+  grafana:
+    short_description: Docker container actions for grafana
+    options:
+      <<: [*docker_container_options_ref]
+
+  redis:
+    short_description: Docker container actions for redis
+    options:
+      <<: [*docker_container_options_ref, *storage_path_options_ref]

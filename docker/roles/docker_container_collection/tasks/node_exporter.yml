@@ -3,7 +3,7 @@
   import_task: container_action.yaml
   vars:
     action: "{{ action }}"
-    container_params:
+    params:
       name: node_exporter
       hostname: node_exporter
       image: "{{ image }}"

@@ -1,0 +1,8 @@
+---
+jasperreport_defaults:
+  allow_empty_password: true
+  password: ""
+  services:
+    jasperreports:
+      ports:
+        - "80:8090"

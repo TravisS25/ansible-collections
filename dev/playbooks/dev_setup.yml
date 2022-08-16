@@ -7,33 +7,51 @@
     - name: Assert import_file is defined
       assert:
         that: import_file is defined
-      fail_msg: Variable "import_file" is not defined
+        fail_msg: Variable "import_file" is not defined
 
   tasks:
-    - name: Import vars from file
+    - name: Import config vars from file
       include_vars:
         name: file_vars
         file: "{{ import_file }}"
 
-    - name: Import droplet argument specs
+    - name: Set ansible root dir
+      set_fact:
+        ansible_root_dir: "{{ lookup('env', 'ANSIBLE_ROOT') }}"
+
+    - name: Verify ansible root env variable value
+      assert:
+        that: ansible_root_dir != ''
+        fail_msg: 'Env variable "ANSIBLE_ROOT" is undefined'
+
+    - name: Set docker collection dir
+      set_fact:
+        docker_collection_dir: "{{ ansible_root_dir }}/traviss25/docker/roles/docker_container_collection/tasks"
+
+    - name: Import util setup argument specs
       include_vars:
         name: util_setup_arg_specs
-        file: "{{ all_defaults.base_ansible_install_path }}/traviss25/util/roles/setup/meta/argument_specs.yaml"
+        file: "{{ ansible_root_dir }}/traviss25/util/roles/setup/meta/argument_specs.yml"
 
     - name: Import dev setup argument specs
       include_vars:
         name: dev_setup_arg_specs
-        file: "{{ all_defaults.base_ansible_install_path }}/traviss25/dev/roles/setup/meta/argument_specs.yaml"
+        file: "{{ ansible_root_dir }}/traviss25/dev/roles/setup/meta/argument_specs.yml"
 
     - name: Import dev vagrant argument specs
       include_vars:
         name: dev_vagrant_arg_specs
-        file: "{{ all_defaults.base_ansible_install_path }}/traviss25/dev/roles/vagrant/meta/argument_specs.yaml"
+        file: "{{ ansible_root_dir }}/traviss25/dev/roles/vagrant/meta/argument_specs.yml"
 
-    - name: Import ssh argument specs
+    - name: Import util ssh argument specs
       include_vars:
         name: util_ssh_arg_specs
-        file: "{{ all_defaults.base_ansible_install_path }}/traviss25/util/roles/ssh/meta/argument_specs.yaml"
+        file: "{{ ansible_root_dir }}/traviss25/util/roles/ssh/meta/argument_specs.yml"
+
+    - name: Assert config is defined
+      assert:
+        that: file_vars.config is defined
+        fail_msg: Config object must be defined
 
     - name: Verify droplets setup
       loop: "{{ file_vars.config.droplets }}"
@@ -41,22 +59,36 @@
         argument_spec: "{{ util_setup_arg_specs['argument_specs']['droplet']['options'] }}"
         provided_arguments:
           droplet: "{{ item }}"
-          default_docker_container: "{{ all_defaults.docker_container }}"
+
+    - name: Gather docker container collection names
+      loop: "{{ file_vars.config.droplets | subelements('docker_containers') }}"
+      when: item.1.from_collection
+      find:
+        paths: "{{ docker_collection_dir }}"
+        patterns: "{{ item.1.name }}.*"
+      register: collection_stats
+
+    - name: Verify docker container collection names
+      loop: "{{ collection_stats.results }}"
+      when: item.skipped is not defined
+      assert:
+        that: item.matched != 0
+        fail_msg: "Invalid docker container collection name '{{ item.item[1].name }}'"
 
     - name: Verify vm provider install
       validate_argument_spec:
-        argument_spec: "{{ dev_vagrant_arg_specs['argument_specs']['vm_provider_install']['options'] }}"
+        argument_spec: "{{ dev_setup_arg_specs['argument_specs']['vm_provider_install']['options'] }}"
         provided_arguments:
           vm_provider: "{{ file_vars.config.vm_provider }}"
 
     - name: Verify libvirt disk
       when: file_vars.config.vm_provider == 'libvirt' and item.1 is defined and item.1 | length > 0
-      loop: "{{ file_vars.config.droplets | subelements('vagrant.disks') }}"
+      loop: "{{ file_vars.config.droplets | subelements('vagrant.disks', skip_missing=True) }}"
       validate_argument_spec:
         argument_spec: "{{ dev_vagrant_arg_specs['argument_specs']['libvirt_disk']['options'] }}"
         provided_arguments:
-          vm_name: "{{ item.0.name }}"
-          project_root: "{{ file_vars.vagrant.project_root }}"
+          vm_name: "{{ item.0.vagrant.name }}"
+          project_root: "{{ file_vars.config.project_root }}"
           disk: "{{ item.1 }}"
 
     - name: Verify vagrant install
@@ -91,57 +123,68 @@
           hostname: "{{ item.1.hostname }}"
           fqdn: "{{ item.1.fqdn }}"
 
-    - name: Install vm provider
-      import_role:
-        name: setup
-        tasks_from: vm_provider_install
-      vars:
-        vm_provider: "{{ vm_provider }}"
+    - name: Verify ca droplet
+      when: file_vars.config.ca_droplet is defined
+      validate_argument_spec:
+        argument_spec: "{{ dev_setup_arg_specs['argument_specs']['ca_droplet']['options'] }}"
+        provided_arguments:
+          droplet: "{{ file_vars.config.ca_droplet }}"
 
-    - name: Install vagrant
-      import_role:
-        name: setup
-        tasks_from: vagrant_install
+    # - block:
+    #   become: true
+    #   - name: Install vm provider
+    #     import_role:
+    #       name: setup
+    #       tasks_from: vm_provider_install
+    #     vars:
+    #       vm_provider: "{{ vm_provider }}"
 
-    - name: Setup vagrant
-      import_role:
-        name: setup
-        tasks_from: vagrant_setup
-      vars:
-        vm_provider: "{{ file_vars.vagrant.vm_provider }}"
-        project_root: "{{ file_vars.vagrant.project_root }}"
-        file_content: "{{ file_vars.vagrant.file_content }}"
+    #   - name: Install vagrant
+    #     import_role:
+    #       name: vagrant
+    #       tasks_from: vagrant_install
+    #     vars:
+    #       vm_provider: "{{ file_vars.config.vm_provider }}"
 
-    - name: Import ssh setup role
-      loop: "{{ file_vars.config.droplets }}"
-      include_role:
-        name: traviss25.util.ssh
-        tasks_from: pass_key
-      vars:
-        ip: "{{ item.ip }}"
-        user: "{{ item.user_creds.username }}"
-        password: "{{ item.user_creds.password }}"
+    #   - name: Setup vagrant
+    #     import_role:
+    #       name: vagrant
+    #       tasks_from: vagrant_setup
+    #     vars:
+    #       vm_provider: "{{ file_vars.config.vm_provider }}"
+    #       project_root: "{{ file_vars.config.project_root }}"
+    #       droplets: "{{ file_vars.config.droplets }}"
 
-    - name: Import update host file role
-      loop: "{{ file_vars.config.droplets | subelements('host_file_list') }}"
-      include_role:
-        name: system_util
-        tasks_from: update_droplets_file
-        apply:
-          delegate_to: "{{ item.0.ip }}"
-          become: true
-      vars:
-        ip: "{{ item.1.ip }}"
-        fqdn: "{{ item.1.fqdn }}"
-        hostname: "{{ item.1.hostname }}"
+    #   - name: Import ssh setup role
+    #     loop: "{{ file_vars.config.droplets }}"
+    #     include_role:
+    #       name: traviss25.util.ssh
+    #       tasks_from: pass_key
+    #     vars:
+    #       ip: "{{ item.ip }}"
+    #       user: "{{ item.user_creds.username }}"
+    #       password: "{{ item.user_creds.password }}"
 
-    - name: Import droplet setup role
-      loop: "{{ file_vars.config.droplets }}"
-      become: true
-      delegate_to: "{{ item.ip }}"
-      include_role:
-        name: traviss25.util.setup
-        tasks_from: droplet
-      vars:
-        droplet: "{{ item }}"
-        default_docker_container: "{{ all_defaults.docker_container }}"
+    #   - name: Import update host file role
+    #     loop: "{{ file_vars.config.droplets | subelements('host_file_list') }}"
+    #     include_role:
+    #       name: system_util
+    #       tasks_from: update_droplets_file
+    #       apply:
+    #         become: true
+    #         delegate_to: "{{ item.0.ip }}"
+    #     vars:
+    #       ip: "{{ item.1.ip }}"
+    #       fqdn: "{{ item.1.fqdn }}"
+    #       hostname: "{{ item.1.hostname }}"
+
+    #   - name: Import droplet setup role
+    #     loop: "{{ file_vars.config.droplets }}"
+    #     include_role:
+    #       name: traviss25.util.setup
+    #       tasks_from: droplet
+    #       apply:
+    #         become: true
+    #         delegate_to: "{{ item.ip }}"
+    #     vars:
+    #       droplet: "{{ item }}"

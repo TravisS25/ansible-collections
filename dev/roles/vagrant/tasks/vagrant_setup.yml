@@ -65,15 +65,12 @@
 - name: Libvirt block
   when: vm_provider == 'libvirt'
   block:
-    - name: Libvirt disks block
-      when: vms.disks is defined and vms.disks | length > 0
-      block:
-        - name: Create/attach libvirt disks
-          loop: "{{ vms | subelements('disks') }}"
-          include_role:
-            name: setup
-            tasks_from: libvirt_disk
-          vars:
-            vm_name: "{{ item.0.name }}"
-            project_root: "{{ project_root }}"
-            disk: "{{ item.1 }}"
+    - name: Create/attach libvirt disks
+      loop: "{{ droplets | subelements('disks', skip_missing=True) }}"
+      include_role:
+        name: setup
+        tasks_from: libvirt_disk
+      vars:
+        vm_name: "{{ item.0.name }}"
+        project_root: "{{ project_root }}"
+        disk: "{{ item.1 }}"

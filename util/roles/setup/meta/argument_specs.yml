@@ -1,35 +1,34 @@
 ---
-default_docker_container: &default_docker_container_ref
-  type: dict
-  required: true
-  description: Default set of docker types to be used if docker type is not found
-
-docker_container_options: &docker_container_options_ref
+base_docker_options: &base_docker_options_ref
+  from_collection:
+    type: bool
+    default: false
+    description: Determine whether to use container from docker collection/compose role
   name:
     type: str
     required: true
-    description: Docker container name to install on droplet
-  image:
-    type: str
-    required: true
-    description: Docker container image to install on droplet
+    description: Docker container/compose name to install on droplet
   action:
     type: str
-    required: true
+    default: start
+    description: Docker action to perform on container/compose
     choices:
       - start
       - restart
       - stop
   vars:
     type: dict
-    description: Dict of variables that apply to docker container
+    description: Various vars that can be used in roles file
+  params:
+    type: dict
+    description: |
+      Params that are used in the community.docker.docker_container/community.docker.docker_compose module
 
 argument_specs:
   droplet:
     short_description: Creates droplet
     description: Creates droplet based on settings passed
     options:
-      default_docker_container: *default_docker_container_ref
       droplet:
         type: dict
         required: true
@@ -37,7 +36,47 @@ argument_specs:
         options:
           ip:
             type: str
+            required: true
             description: IP of droplet
+          hostname:
+            type: str
+            required: true
+            description: Hostname of droplet
+          vagrant:
+            type: dict
+            description: Vagrant object for setting up test environment
+            options:
+              name:
+                type: str
+                required: true
+                description: Name of vm for whatever provider
+              box:
+                type: str
+                required: true
+                description: VM image to use for whatever provider
+              specs:
+                type: dict
+                description: Hardware specs of vm for whatever provider
+                options:
+                  memory:
+                    type: int
+                    description: Memory in MBs allocated to vm
+                  cpus:
+                    type: int
+                    description: Number of cpus allocated to vm
+              disks:
+                type: list
+                elements: dict
+                description: List of disk objects with settings
+                options:
+                  name:
+                    type: str
+                    required: true
+                    description: Name of disk
+                  size:
+                    type: int
+                    required: true
+                    description: Size of disk in GBs
           host_file_list:
             type: list
             elements: dict
@@ -72,19 +111,11 @@ argument_specs:
                 type: list
                 required: true
                 description: List of groups that the user will be apart of
-          disks:
+          mounts:
             type: list
             elements: dict
             description: List of dicts that determine what device to mount and where
             options:
-              name:
-                type: str
-                required: true
-                description: Name of device
-              size:
-                type: int
-                required: true
-                description: Size of disk in GB
               mount_point:
                 type: str
                 required: true
@@ -97,55 +128,19 @@ argument_specs:
                 type: str
                 required: true
                 description: File system type to apply to disk
-          docker_compose:
+          docker_composes:
             type: list
             elements: dict
             description: List of docker compose objects
-            options:
-              project_name:
-                type: str
-                required: true
-                description: Project name of the docker compose to be executed
-              service:
-                type: dict
-                required: true
-                description: Object of services that are apart of this project
-                options:
-                  name:
-                    type: str
-                    required: true
-                    description:
+            options: *base_docker_options_ref
           docker_containers:
             type: list
             elements: dict
             required: true
             description: List of docker types to install on droplet
             options:
-              name:
-                type: str
-                required: true
-                description: Docker container name to install on droplet
               image:
                 type: str
                 required: true
                 description: Docker container image to install on droplet
-              vars:
-                type: dict
-                description: Dict of variables that apply to docker container
-  droplet_docker_container:
-    short_description: Operate on docker container
-    description: Operate on docker container depending on docker type and run action
-    options:
-      docker_container:
-        type: dict
-        required: true
-        description: Docker type to run action against
-        options:
-          name:
-            type: str
-            required: true
-            description: Name of the docker type
-          vars:
-            type: dict
-            description: Various variables needed to run current docker type
-      default_docker_container: *default_docker_container_ref
+              <<: *base_docker_options_ref

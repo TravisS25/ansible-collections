@@ -44,8 +44,8 @@
     - name: Install docker packages
       apt:
         pkg:
-          - "docker-ce={{ docker_version }}"
-          - "docker-ce-cli={{ docker_version }}"
+          - "docker-ce={{ docker_version | default(install_defaults.docker_version) }}"
+          - "docker-ce-cli={{ docker_version | default(install_defaults.docker_version) }}"
 
     - name: Create docker group
       shell:

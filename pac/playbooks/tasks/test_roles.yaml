@@ -1,4 +1,0 @@
-- name: Test Role Things
-  hosts: localhost
-  roles:
-    - traviss25.test.setup

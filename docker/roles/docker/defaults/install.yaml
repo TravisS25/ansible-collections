@@ -1,1 +1,2 @@
-docker_version: 5:20.10.17~3-0~ubuntu-focal
+install_defaults:
+  docker_version: 5:20.10.17~3-0~ubuntu-focal

@@ -1,0 +1,28 @@
+---
+- name: Set docker container facts
+  set_fact:
+    docker_container_vars: "{{ params }}" &docker_container_vars_ref
+
+- name: Import docker role container(s) from collection
+  when: from_collection 
+  import_role:
+    name: traviss25.docker.docker_container_collection
+    tasks_from: "{{ name }}"
+  vars:
+    name: "{{ name }}"
+    image: "{{ image }}"
+    action: "{{ action }}"
+    vars: "{{ vars }}"
+    params: "{{ params }}"
+
+- name: Import docker role container(s)
+  when: not from_collection 
+  import_role:
+    name: traviss25.docker.docker
+    tasks_from: container_action
+  vars:
+    name: "{{ name }}"
+    image: "{{ image }}"
+    action: "{{ action }}"
+    vars: "{{ vars }}"
+    params: "{{ params }}"

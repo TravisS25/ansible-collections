@@ -1,5 +1,5 @@
 ---
-base_options: &base_options_ref
+base_service_options: &base_service_options_ref
   image:
     type: str
     required: true
@@ -15,13 +15,13 @@ argument_specs:
     options:
       password:
         type: str
-        required: true
+        default: ""
         description: Password for app
       allow_empty_password:
         type: bool
-        default: yes
+        default: true
         description: Determine whether to allow user to not use a password for app
-      sevices:
+      services:
         type: dict
         required: true
         description: Services for jasperreports app
@@ -30,18 +30,15 @@ argument_specs:
             type: dict
             required: true
             description: Mariadb object for mariadb app settings
-            options:
-              <<: *base_options_ref
+            options: *base_service_options_ref
           jasperreports:
             type: dict
             required: true
             description: Jasperreports object for jasperreports app settings
             options:
-              <<: *base_options_ref
+              <<: *base_service_options_ref
               ports:
                 type: list
                 default:
-                  - '80:8090'
+                  - "80:8090"
                 description: List of ports to expose to host
-          
-          

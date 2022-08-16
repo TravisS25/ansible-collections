@@ -3,30 +3,30 @@
   community.docker.docker_compose:
     project_name: jasperreports
     definition:
-      version: '2'
+      version: "2"
       services:
         mariadb:
-          image: "{{ mariadb.image }}"
+          image: "{{ params.services.mariadb.image }}"
           volumes:
-            - "{{ mariadb.storage_path }}:/bitnami/mariadb"
+            - "{{ params.services.mariadb.storage_path }}:/bitnami/mariadb"
           environment:
             # ALLOW_EMPTY_PASSWORD is recommended only for development.
-            - ALLOW_EMPTY_PASSWORD="{{ allow_empty_password }}"
+            - ALLOW_EMPTY_PASSWORD="{{ params.allow_empty_password | jasperreport_defaults.allow_empty_password }}"
             - MARIADB_USER=bn_jasperreports
-            - MARIADB_PASSWORD="{{ password }}"
+            - MARIADB_PASSWORD="{{ params.password | jasperreport_defaults.password }}"
             - MARIADB_DATABASE=bitnami_jasperreports
         jasperreports:
-          image: "{{ jasperreports.image }}"
-          ports: "{{ jasperreports.ports }}"
+          image: "{{ params.services.jasperreports.image }}"
+          ports: "{{ params.services.jasperreports.ports | default(jasperreport_defaults.services.jasperreports.ports) }}"
           volumes:
-            - "{{ jasperreports.storage_path }}:/bitnami/jasperreports"
+            - "{{ params.services.jasperreports.storage_path }}:/bitnami/jasperreports"
           depends_on:
             - mariadb
           environment:
             # ALLOW_EMPTY_PASSWORD is recommended only for development.
-            - ALLOW_EMPTY_PASSWORD="{{ allow_empty_password }}"
+            - ALLOW_EMPTY_PASSWORD="{{ params.allow_empty_password | jasperreport_defaults.allow_empty_password }}"
             - JASPERREPORTS_DATABASE_HOST=mariadb
             - JASPERREPORTS_DATABASE_PORT_NUMBER=3306
             - JASPERREPORTS_DATABASE_USER=bn_jasperreports
-            - JASPERREPORTS_DATABASE_PASSWORD="{{ password }}"
+            - JASPERREPORTS_DATABASE_PASSWORD="{{ params.password | jasperreport_defaults.password }}"
             - JASPERREPORTS_DATABASE_NAME=bitnami_jasperreports

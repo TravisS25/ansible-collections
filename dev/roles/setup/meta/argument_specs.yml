@@ -1,0 +1,116 @@
+---
+vm_provider: &vm_provider_ref
+  type: str
+  default: virtualbox
+  description: Determines what vm provider to install
+  choices:
+    - virtualbox
+    - libvirt
+
+project_root: &project_root_ref
+  type: str
+  required: true
+  description: Root project folder to store vagrant info
+
+disk_options: &disk_options_ref
+  name:
+    type: str
+    required: true
+    description: Name of disk
+  size:
+    type: int
+    required: true
+    description: Size of disk in GB
+
+vm_name: &vm_name_ref
+  type: str
+  required: true
+  description: Name of vm which should be unique
+
+argument_specs:
+  foo:
+    options:
+      msg:
+        type: str
+        default: "Test message"
+
+  ca_droplet:
+    short_description: Setup dev ca server
+    description: Setup dev ca server so other vms apart of dev build can have certified ca
+    options:
+      droplet:
+        type: dict
+        required: true
+        description: The droplet that will be set up as a ca server
+        options:
+          ip:
+            type: str
+            description: IP of droplet
+          ca:
+            type: dict
+            required: true
+            description: Settings for ca server
+            options:
+              cert:
+                type: dict
+                description: Certificate settings of where to store generated cert
+                options:
+                  file_path:
+                    type: str
+                    default: /etc/mkcert/
+                    description: |
+                      Directory path to store cert.  Will create directories if don't exist
+                      Should end with '/'
+                  file_name:
+                    type: str
+                    default: dev.pem
+                    description: Name of cert name
+              domains:
+                type: list
+                required: true
+                description: List of domains for server to make certs for
+          user_creds:
+            type: dict
+            required: true
+            description: User creds for droplet
+            options:
+              username:
+                type: str
+                required: true
+                description: Username that will be created for droplet
+              password:
+                type: str
+                required: true
+                description: Password for user that will be created for droplet
+              groups:
+                type: list
+                required: true
+                description: List of groups that the user will be apart of
+
+  vm_provider_install:
+    short_description: Install vm provider
+    description: Determine what vm provider to install based on passed provider
+    options:
+      vm_provider:
+        type: str
+        default: virtualbox
+        description: Determines what vm provider to install
+        choices:
+          - virtualbox
+          - libvirt
+
+  update_hosts_file:
+    short_description: Updates host file
+    options:
+      ip:
+        type: str
+        required: true
+        description: IP address of agent host
+      hostname:
+        type: str
+        required: true
+        description: Hostname of agent host
+      fqdn:
+        type: str
+        required: true
+        description: FQDN of agent host

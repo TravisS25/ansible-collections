@@ -3,9 +3,9 @@ vm_provider: &vm_provider_ref
   type: str
   default: virtualbox
   description: Determines what vm provider to install
-  choices:  
-  - virtualbox
-  - libvirt
+  choices:
+    - virtualbox
+    - libvirt
 
 project_root: &project_root_ref
   type: str
@@ -28,18 +28,6 @@ vm_name: &vm_name_ref
   description: Name of vm which should be unique
 
 argument_specs:
-  vm_provider_install:
-    short_description: Install vm provider
-    description: Determine what vm provider to install based on passed provider
-    options:
-      vm_provider:
-        type: str
-        default: virtualbox
-        description: Determines what vm provider to install
-        choices:  
-          - virtualbox
-          - libvirt
-
   vagrant_install:
     short_description: Install vagrant
     description: Install vagrant and related plugins for provider

@@ -1,47 +1,42 @@
 ---
-- name: Assert minio settings are correct
-  assert:
-    that: distributed_mode is defined or filesystem_mode is defined
-    fail_msg: "'distributed_mode' or 'filesystem_mode' variable must be defined"
+- name: Set mount facts
+  set_fact:
+    mounts: []
 
-- name: Distrubuted mode block
-  when: distributed_mode
+- name: Single mode facts
+  when: distributed_mode is not defined
+  set_fact:
+    command: "server {{ protocol }}://{{ hostname }}/data --console-address ':9001'"
+    mounts: "{{ mounts + [combine({'source': storage_path, 'target': '/data'})] }}"
+
+- name: Distributed mode block
+  when: distributed_mode is defined
   block:
-    - name: Loop through mount range
-      loop: "{{ range(1, distributed_mode.num_of_drives + 1) }}"
-      vars:
-        mount_point: "/mnt/minio{{ item }}"
-        target_point: "/data{{ item }}"
+    - name: Distributed mode facts
       set_fact:
-        mounts: "{{ mounts | default([]) + [{'source': mount_point, 'target': target_point}] }}"
+        command: |
+          server {{ protocol }}://{{ hostname }}{1...{{ distributed_mode.num_of_hosts }}}/data{1...{{ distributed_mode.num_of_drives }}} \
+          --console-address ':9001'
 
-    - name: Import container action task for minio distributed mode
-      import_task: container_action.yaml
+    - name: Loop storage paths
+      loop: "{{ range(1, distributed_mode.num_of_drives + 1) }}"
+      loop_control:
+        index_var: idx
       vars:
-        action: "{{ distributed_mode.docker_action }}"
-        container_params:
-          name: minio
-          hostname: minio
-          image: "{{ distributed_mode.image }}"
-          restart_policy: always
-          publish_all_ports: yes
-          command: |
-            server {{ distributed_mode.protocol }}://{{ distributed_mode.hostname }}{1...{{ distributed_mode.num_of_hosts }}}/data{1...{{ distributed_mode.num_of_drives }}} \
-            --console-address ':9001'
-          mounts: "{{ mounts }}"
+        new_source: "{{ item }}{{ idx + 1 }}"
+        new_target: "/data{{ idx + 1 }}"
+      set_fact:
+        mounts: "{{ mounts + [combine({'source': new_source, 'target', new_target})] }}"
 
-- name: Import container action task for minio filesystem mode
-  when: filesystem_mode and not distributed_mode
+- name: Import container action task
   import_task: container_action.yaml
   vars:
-    action: "{{ docker_action }}"
-    container_params:
+    action: "{{ action }}"
+    image: "{{ image }}"
+    params:
       name: minio
       hostname: minio
-      image: "{{ image }}"
       restart_policy: always
       publish_all_ports: yes
-      command: "server {{ protocol }}://{{ hostname }}/data --console-address ':9001'"
-      mounts: 
-        - source: /mnt/minio
-          target: /data
+      command: "{{ command }}"
+      mounts: "{{ mounts }}"

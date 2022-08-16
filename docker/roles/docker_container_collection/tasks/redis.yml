@@ -1,0 +1,17 @@
+---
+- name: Import container action task for redis
+  import_task: container_action.yaml
+  vars:
+    action: "{{ action }}"
+    params:
+      name: redis
+      hostname: redis
+      image: "{{ image }}"
+      restart_policy: always
+      publish_all_ports: yes
+      command:
+        - redis-server
+        - --appendonly=yes
+      mounts:
+        - source: "{{ storage_path }}"
+          target: /data

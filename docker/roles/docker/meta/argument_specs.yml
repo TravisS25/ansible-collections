@@ -1,0 +1,76 @@
+---
+base_docker_options: &base_docker_options_ref
+  name:
+    type: str
+    required: true
+    description: Docker container/compose name to install on droplet
+  action:
+    type: str
+    default: start
+    description: Docker action to perform on container/compose
+    choices:
+      - start
+      - restart
+      - stop
+  vars:
+    type: dict
+    description: Various vars that can be used in roles file
+  params:
+    type: dict
+    description: |
+      Params that are used in the community.docker.docker_container/community.docker.docker_compose module
+
+base_docker_container_options: &base_docker_container_options_ref
+  image:
+    type: str
+    required: true
+    description: Docker container image to install on droplet
+
+from_collection: &from_collection_ref
+  type: bool
+  default: false
+  description: Determine whether to use premade image template for container/compose
+
+argument_specs:
+  install:
+    short_description: Installs docker
+    description: Installs docker on box and will skip if already on box
+    options:
+      username:
+        type: str
+        description: Username to add to docker group that is created
+      docker_version:
+        type: str
+        default: 5:20.10.17~3-0~ubuntu-focal
+
+  image_pull:
+    short_description: Pulls docker image
+    description: Pulls docker image based on docker image name given
+    options:
+      image:
+        type: str
+        required: true
+        description: Name of docker image to pull
+
+  container:
+    short_description: Operate on docker container
+    description: Operate on docker container depending on docker type and run action
+    options:
+      from_collection: *from_collection_ref
+      <<: [*base_docker_options_ref, *base_docker_container_options_ref]
+
+  container_action:
+    short_description: Determines docker container action
+    options:
+      <<: [*base_docker_options_ref, *base_docker_container_options_ref]
+
+  compose_service:
+    short_description: Operate on docker compose app
+    description: Operate on docker compose app depending on settings passed
+    options:
+      from_collection: *from_collection_ref
+      <<: *base_docker_options_ref
+
+  compose_action:
+    short_description: Perform action on docker compose app
+    options: *base_docker_options_ref

@@ -13,7 +13,6 @@
     cockroachdb_container: &cockroachdb_container_ref
       name: cockroachdb
       hostname: cockroachdb
-      image: "{{ image }}"
       restart_policy: always
       publish_all_ports: yes
       command: "{{ cockroachdb_command }}"
@@ -24,12 +23,12 @@
 - name: Import container action task for cockroachdb
   import_task: container_action.yaml
   vars:
-    action: "{{ docker_action }}"
-    container_params:
-      <<: *cockroachdb_container_ref
+    action: "{{ action }}"
+    image: "{{ image }}"
+    params: *cockroachdb_container_ref
 
 - name: Init cluster block
-  when: cockroachdb_init_cluster and docker_action == 'start'
+  when: cockroachdb_init_cluster and action == 'start'
   block:
     - name: Set init cluster command fact
       with_dict: "{{ cockroachdb_container }}"
@@ -40,6 +39,6 @@
     - name: Init cockroachdb cluster
       import_task: container_action.yaml
       vars:
-        action: "{{ docker_action }}"
-        container_params:
-          <<: *cockroachdb_container_ref
+        action: "{{ action }}"
+        image: "{{ image }}"
+        params: *cockroachdb_container_ref

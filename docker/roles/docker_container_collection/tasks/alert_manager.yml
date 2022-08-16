@@ -3,10 +3,10 @@
   import_task: container_action.yaml
   vars:
     action: "{{ action }}"
-    container_params:
+    image: "{{ image }}"
+    params:
       name: alert_manager
       hostname: alert_manager
-      image: "{{ image }}"
       restart_policy: always
       publish_all_ports: yes
       mounts:

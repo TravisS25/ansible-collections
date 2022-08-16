@@ -1,0 +1,24 @@
+---
+- name: Create grafana storage path
+  file:
+    state: directory
+    path: "{{ storage_path }}"
+
+- name: Set grafana container facts
+  set_fact:
+    grafana_container: &grafana_container_ref
+      name: grafana
+      hostname: grafana
+      restart_policy: always
+      publish_all_ports: yes
+      mounts:
+        - source: "{{ storage_path }}"
+          target: /var/lib/grafana
+
+- name: Import container action task for cockroachdb
+  import_task: container_action.yaml
+  vars:
+    action: "{{ action }}"
+    image: "{{ image }}"
+    params:
+      <<: *grafana_container_ref
