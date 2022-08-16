@@ -95,15 +95,15 @@
       validate_argument_spec:
         argument_spec: "{{ dev_vagrant_arg_specs['argument_specs']['vagrant_install']['options'] }}"
         provided_arguments:
-          vm_provider: "{{ file_vars.vagrant.vm_provider }}"
+          vm_provider: "{{ file_vars.config.vm_provider }}"
 
     - name: Verify vagrant setup
       validate_argument_spec:
         argument_spec: "{{ dev_vagrant_arg_specs['argument_specs']['vagrant_setup']['options'] }}"
         provided_arguments:
-          vm_provider: "{{ file_vars.vagrant.vm_provider }}"
-          project_root: "{{ file_vars.vagrant.project_root }}"
-          droplets: "{{ file_vars.droplets }}"
+          vm_provider: "{{ file_vars.config.vm_provider }}"
+          project_root: "{{ file_vars.config.project_root }}"
+          droplets: "{{ file_vars.config.droplets }}"
 
     - name: Verify ssh setup
       loop: "{{ file_vars.config.droplets }}"

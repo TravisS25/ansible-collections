@@ -3,9 +3,18 @@
   hosts: localhost
 
   tasks:
-    - name: Set dev facts
-      set_fact:
-        ansible_root_dir: "{{ lookup('env', 'ANSIBLE_ROOT') }}"
+    - become: true
+      block:
+        - name: Import libvirt install
+          import_role:
+            name: setup
+            tasks_from: vm_provider_install
+          vars:
+            vm_provider: libvirt
+
+    # - name: Set dev facts
+    #   set_fact:
+    #     ansible_root_dir: "{{ lookup('env', 'ANSIBLE_ROOT') }}"
 
     # - name: Import vars from file
     #   include_vars:
