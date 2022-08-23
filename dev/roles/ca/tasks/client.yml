@@ -1,0 +1,54 @@
+---
+- name: Set base client facts
+  set_fact:
+    client_key_dir_path: "{{ key.dir_path | default(ca_client_defaults.key.dir_path) }}"
+    client_key_filename: "{{ key.filename | default(ca_client_defaults.key.filename) }}"
+    client_cert_dir_path: "{{ cert.dir_path | default(ca_client_defaults.cert.dir_path) }}"
+    client_cert_filename: "{{ cert.filename | default(ca_client_defaults.cert.filename) }}"
+    server_key_dir_path: "{{ ca_server.key.dir_path | default(ca_server_defaults.key.dir_path) }}"
+    server_key_filename: "{{ ca_server.key.filename | default(ca_server_defaults.key.filename) }}"
+    server_cert_dir_path: "{{ ca_server.cert.dir_path | default(ca_server_defaults.cert.dir_path) }}"
+    server_cert_filename: "{{ ca_server.cert.filename | default(ca_server_defaults.cert.filename) }}"
+
+- name: Set combine facts
+  set_fact:
+    client_key_full_path: "{{ (client_key_dir_path, client_key_filename) | path_join }}"
+    client_cert_full_path: "{{ (client_cert_dir_path, client_cert_filename) | path_join }}"
+    server_key_full_path: "{{ (server_key_dir_path, server_key_filename) | path_join }}"
+    server_cert_full_path: "{{ (server_cert_dir_path, server_cert_filename) | path_join }}"
+
+- name: Create client ssl directory
+  file:
+    state: directory
+    path: "{{ client_key_dir_path }}"
+
+- name: Create private key for client
+  community.crypto.openssl_privatekey:
+    path: "{{ client_key_full_path }}"
+  run_once: true
+
+- name: Create certificate signing request (CSR) for new certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "{{ client_key_full_path }}"
+    subject_alt_name: "{{ subject_alt_names }}"
+  run_once: true
+  register: csr
+
+- name: Sign certificate with our CA
+  community.crypto.x509_certificate_pipe:
+    csr_content: "{{ csr.csr }}"
+    provider: ownca
+    ownca_path: "{{ server_cert_full_path }}"
+    ownca_privatekey_path: "{{ server_key_full_path }}"
+    ownca_not_after: +365d # valid for one year
+    ownca_not_before: "-1d" # valid since yesterday
+  delegate_to: "{{ ca_server.ip }}"
+  run_once: true
+  register: certificate
+
+- name: Write certificate file back to client
+  copy:
+    dest: "{{ client_cert_full_path }}"
+    content: "{{ certificate.certificate }}"
+  delegate_to: "{{ ip }}"
+  run_once: true

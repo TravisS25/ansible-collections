@@ -1,0 +1,33 @@
+---
+- name: Create vagrant project directory if not exists
+  file:
+    path: "{{ project_root }}"
+    state: directory
+    mode: "0700"
+
+- name: Set vagrant facts
+  set_fact:
+    vagrant_file_path: "{{ project_root }}/Vagrantfile"
+
+- name: Remove old vagrant file
+  file:
+    path: "{{ vagrant_file_path }}"
+    state: absent
+
+- name: Creating vagrant file
+  file:
+    path: "{{ vagrant_file_path }}"
+    state: touch
+
+- name: Write to vagrant file
+  blockinfile:
+    path: "{{ vagrant_file_path }}"
+    block: |
+      Vagrant.configure("2") do |config|
+        {{ content }}
+      end
+
+- name: Vagrant up
+  command:
+    chdir: "{{ project_root }}"
+    cmd: vagrant up --provider="{{ vm_provider }}"

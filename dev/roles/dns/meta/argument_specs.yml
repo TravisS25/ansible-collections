@@ -1,0 +1,78 @@
+---
+state: &state_ref:
+  type: str
+  choices:
+    - create
+    - append
+    - delete
+  default: create
+  description: Determines the state of file
+
+zone_options: &zone_options_ref
+  root_dir:
+    type: str
+    default: /etc/coredns/zones
+    description: Root dir of zone files for Corefile
+  domain_name:
+    type: str
+    required: true
+    description: |
+      Name of domain that a zone will be created after and will be used as
+      apart of the "$ORIGIN" variable in zone file
+      The file name will be prefixed with "db."
+  file_state: *state_ref
+  zone_settings:
+    type: dict
+    description: Settings to be used in file
+
+corefile_options: &corefile_options_ref
+  root_dir:
+    type: str
+    default: /etc/coredns
+    description: Root dir of coredns files
+  state: *state_ref
+  records:
+    type: list
+    elements: dict
+    description: Settings for Corefile if state is not "delete"
+    options:
+      name:
+        type: str
+        description: This is the outer most block where we declare domain/ports to listen for
+      blocks:
+        type: list
+        elements: dict
+        description: Blocks to use for server block
+        options:
+          name:
+            type: str
+            description: Name of plugin/parameter to use
+          parameters:
+            type: list
+            elements: str
+            description: Parameters to use for plugin
+          blocks:
+            type: list
+            elements: dict
+            description: Recursive list of this dict
+
+argument_specs:
+  install:
+    description: Install requirements for dns server
+    options:
+      coredns_version:
+        type: str
+        default: 1.9.3
+        description: Version of coredns to download
+
+  zone:
+    description: Creates zone file(s) for Corefile to use
+    options:
+
+  corefile:
+    description: Creates corefile config file
+    options: *corefile_options_ref
+
+  corefile_preflight:
+    description: Asserts corefile parameters
+    options: *corefile_options_ref

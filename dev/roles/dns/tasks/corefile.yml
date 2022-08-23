@@ -1,0 +1,53 @@
+---
+- name: Set base corefile facts
+  set_fact:
+    state: "{{ state | default(corefile_defaults.state) }}"
+    root_dir: "{{ root_dir | default(corefile_defaults.root_dir) }}"
+
+- name: Set corefile facts
+  set_fact:
+    corefile: "{{ root_dir }}/Corefile"
+
+- name: Delete existing corefile if exists
+  when: state == 'create' or state == 'delete'
+  file:
+    state: absent
+    path: "{{ corefile }}"
+
+- name: Use template to generate Corefile
+  when: state == 'create'
+  template:
+    src: corefile.j2
+    dest: "{{ corefile }}"
+    mode: 0777
+  vars:
+    server_blocks: "{{ records }}"
+
+- name: Append corefile block
+  when: state == 'append'
+  block:
+    - name: Create temp dir
+      file:
+        state: directory
+        path: "{{ root_dir }}/tmp"
+      register: tmp_dir
+
+    - name: Create temp corefile
+      file:
+        state: touch
+        path: "{{ tmp_dir.path }}/tmp_corefile"
+      register: tmp_corefile
+
+    - name: Use template to generate temp Corefile
+      template:
+        src: corefile.j2
+        dest: "{{ tmp_corefile.path }}"
+        mode: 0777
+
+    - name: Append to core file
+      shell: "cat {{ tmp_corefile.path }} >> {{ corefile }}"
+
+    - name: Delete temp file
+      file:
+        state: absent
+        path: "{{ tmp_corefile.path }}"

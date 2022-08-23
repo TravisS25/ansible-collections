@@ -10,10 +10,22 @@
         fail_msg: Variable "import_file" is not defined
 
   tasks:
+    - name: Set playbook facts
+      set_fact:
+        vagrant_content_hostvar: "vagrant_content"
+        vagrant_content_list_hostvar: "vagrant_content_list"
+        ca_dict:
+          test: here
+
     - name: Import config vars from file
       include_vars:
         name: file_vars
         file: "{{ import_file }}"
+
+    - name: Assert config is defined
+      assert:
+        that: file_vars.config is defined
+        fail_msg: Config object must be defined
 
     - name: Set ansible root dir
       set_fact:
@@ -27,6 +39,11 @@
     - name: Set docker collection dir
       set_fact:
         docker_collection_dir: "{{ ansible_root_dir }}/traviss25/docker/roles/docker_container_collection/tasks"
+
+    - name: Import dev ca argument specs
+      include_vars:
+        name: dev_ca_arg_specs
+        file: "{{ ansible_root_dir }}/traviss25/dev/roles/ca/meta/argument_specs.yml"
 
     - name: Import util setup argument specs
       include_vars:
@@ -43,15 +60,15 @@
         name: dev_vagrant_arg_specs
         file: "{{ ansible_root_dir }}/traviss25/dev/roles/vagrant/meta/argument_specs.yml"
 
+    - name: Import dev livbirt argument specs
+      include_vars:
+        name: dev_libvirt_arg_specs
+        file: "{{ ansible_root_dir }}/traviss25/dev/roles/libvirt/meta/argument_specs.yml"
+
     - name: Import util ssh argument specs
       include_vars:
         name: util_ssh_arg_specs
         file: "{{ ansible_root_dir }}/traviss25/util/roles/ssh/meta/argument_specs.yml"
-
-    - name: Assert config is defined
-      assert:
-        that: file_vars.config is defined
-        fail_msg: Config object must be defined
 
     - name: Verify droplets setup
       loop: "{{ file_vars.config.droplets }}"
@@ -60,13 +77,67 @@
         provided_arguments:
           droplet: "{{ item }}"
 
+    - name: Verify vagrant setup
+      loop: "{{ file_vars.config.droplets }}"
+      validate_argument_spec:
+        argument_spec: "{{ dev_vagrant_arg_specs['argument_specs']['setup']['options'] }}"
+        provided_arguments:
+          vm_provider: "{{ file_vars.config.vm_provider }}"
+          project_root: "{{ file_vars.config.project_root }}"
+          ip: "{{ item.ip }}"
+          hostname: "{{ item.hostname }}"
+          vagrant: "{{ item.vagrant }}"
+          vagrant_content_list_hostvar: "{{ vagrant_content_list_hostvar }}"
+          vagrant_content_hostvar: "{{ vagrant_content_hostvar }}"
+
+    - name: Verify ca server
+      when: item.ca is defined and item.ca.server is defined
+      loop: "{{ file_vars.config.droplets }}"
+      validate_argument_spec:
+        argument_spec: "{{ dev_ca_arg_specs['argument_specs']['server']['options'] }}"
+        provided_arguments:
+          key: "{{ item.ca.server.key | default({}) }}"
+          cert: "{{ item.ca.server.cert | default({}) }}"
+
+    - name: Verify ca client
+      when: item.ca is defined and item.ca.client is defined
+      loop: "{{ file_vars.config.droplets }}"
+      validate_argument_spec:
+        argument_spec: "{{ dev_ca_arg_specs['argument_specs']['client']['options'] }}"
+        provided_arguments:
+          ip: "{{ item.ip }}"
+          key: "{{ item.ca.client.key | default({}) }}"
+          cert: "{{ item.ca.client.cert | default({}) }}"
+          subject_alt_names: "{{ item.ca.client.subject_alt_names }}"
+          ca_server:
+            ip: "{{ item.ca.client.ca_server.ip }}"
+
+    - name: Verify ssh setup
+      loop: "{{ file_vars.config.droplets }}"
+      validate_argument_spec:
+        argument_spec: "{{ util_ssh_arg_specs['argument_specs']['pass_key']['options'] }}"
+        provided_arguments:
+          ip: "{{ item.ip }}"
+          username: "{{ item.user_creds.username }}"
+          password: "{{ item.user_creds.password }}"
+
     - name: Gather docker container collection names
       loop: "{{ file_vars.config.droplets | subelements('docker_containers') }}"
-      when: item.1.from_collection
+      when: item.1.from_collection is defined and item.1.from_collection == true
       find:
         paths: "{{ docker_collection_dir }}"
         patterns: "{{ item.1.name }}.*"
       register: collection_stats
+
+    - name: Verify libvirt setup
+      when: file_vars.config.vm_provider == 'libvirt'
+      loop: "{{ file_vars.config.droplets }}"
+      validate_argument_spec:
+        argument_spec: "{{ dev_libvirt_arg_specs['argument_specs']['setup']['options'] }}"
+        provided_arguments:
+          vm_name: "{{ item.vagrant.name }}"
+          project_root: "{{ file_vars.config.project_root }}"
+          disks: "{{ item.vagrant.disks | default([]) }}"
 
     - name: Verify docker container collection names
       loop: "{{ collection_stats.results }}"
@@ -81,54 +152,14 @@
         provided_arguments:
           vm_provider: "{{ file_vars.config.vm_provider }}"
 
-    - name: Verify libvirt disk
-      when: file_vars.config.vm_provider == 'libvirt' and item.1 is defined and item.1 | length > 0
-      loop: "{{ file_vars.config.droplets | subelements('vagrant.disks', skip_missing=True) }}"
-      validate_argument_spec:
-        argument_spec: "{{ dev_vagrant_arg_specs['argument_specs']['libvirt_disk']['options'] }}"
-        provided_arguments:
-          vm_name: "{{ item.0.vagrant.name }}"
-          project_root: "{{ file_vars.config.project_root }}"
-          disk: "{{ item.1 }}"
-
-    - name: Verify vagrant install
-      validate_argument_spec:
-        argument_spec: "{{ dev_vagrant_arg_specs['argument_specs']['vagrant_install']['options'] }}"
-        provided_arguments:
-          vm_provider: "{{ file_vars.config.vm_provider }}"
-
-    - name: Verify vagrant setup
-      validate_argument_spec:
-        argument_spec: "{{ dev_vagrant_arg_specs['argument_specs']['vagrant_setup']['options'] }}"
-        provided_arguments:
-          vm_provider: "{{ file_vars.config.vm_provider }}"
-          project_root: "{{ file_vars.config.project_root }}"
-          droplets: "{{ file_vars.config.droplets }}"
-
-    - name: Verify ssh setup
-      loop: "{{ file_vars.config.droplets }}"
-      validate_argument_spec:
-        argument_spec: "{{ util_ssh_arg_specs['argument_specs']['pass_key']['options'] }}"
-        provided_arguments:
-          ip: "{{ item.ip }}"
-          user: "{{ item.user_creds.username }}"
-          password: "{{ item.user_creds.password }}"
-
     - name: Verify hosts file setup
-      loop: "{{ file_vars.config.droplets | subelements('host_file_list') }}"
+      loop: "{{ file_vars.config.droplets | subelements('host_file_list', skip_missing=True) }}"
       validate_argument_spec:
         argument_spec: "{{ dev_setup_arg_specs['argument_specs']['update_hosts_file']['options'] }}"
         provided_arguments:
           ip: "{{ item.1.ip }}"
           hostname: "{{ item.1.hostname }}"
           fqdn: "{{ item.1.fqdn }}"
-
-    - name: Verify ca droplet
-      when: file_vars.config.ca_droplet is defined
-      validate_argument_spec:
-        argument_spec: "{{ dev_setup_arg_specs['argument_specs']['ca_droplet']['options'] }}"
-        provided_arguments:
-          droplet: "{{ file_vars.config.ca_droplet }}"
 
     # - block:
     #   become: true

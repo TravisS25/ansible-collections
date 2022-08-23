@@ -1,0 +1,41 @@
+---
+- name: Set base server facts
+  set_fact:
+    key_dir_path: "{{ key.dir_path | default(ca_server_defaults.key.dir_path) }}"
+    key_filename: "{{ key.filename | default(ca_server_defaults.key.filename) }}"
+    cert_dir_path: "{{ cert.dir_path | default(ca_server_defaults.cert.dir_path) }}"
+    cert_filename: "{{ cert.filename | default(ca_server_defaults.cert.filename) }}"
+
+- name: Set combine facts
+  set_fact:
+    private_key_full_path: "{{ (key_dir_path, key_filename) | path_join }}"
+    cert_full_path: "{{ (cert_dir_path, cert_filename) | path_join }}"
+
+- name: Create server ssl directory
+  file:
+    state: directory
+    path: "{{ key_dir_path }}"
+
+- name: Create private key
+  community.crypto.openssl_privatekey:
+    path: "{{ private_key_full_path }}"
+
+- name: Create certificate signing request (CSR) for CA certificate
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "{{ private_key_full_path }}"
+    common_name: Ansible CA
+    use_common_name_for_san: false # since we do not specify SANs, don't use CN as a SAN
+    basic_constraints:
+      - "CA:TRUE"
+    basic_constraints_critical: yes
+    key_usage:
+      - keyCertSign
+    key_usage_critical: true
+  register: ca_csr
+
+- name: Create self-signed CA certificate from CSR
+  community.crypto.x509_certificate:
+    path: "{{ cert_full_path }}"
+    csr_content: "{{ ca_csr.csr }}"
+    privatekey_path: "{{ private_key_full_path }}"
+    provider: selfsigned

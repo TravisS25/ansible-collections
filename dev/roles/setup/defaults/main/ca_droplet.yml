@@ -1,5 +1,0 @@
----
-ca_droplet_defaults:
-  cert:
-    file_path: /etc/mkcert/
-    file_name: dev.pem

@@ -3,14 +3,44 @@
   hosts: localhost
 
   tasks:
-    - become: true
-      block:
-        - name: Import libvirt install
-          import_role:
-            name: setup
-            tasks_from: vm_provider_install
-          vars:
-            vm_provider: libvirt
+    - name: Make file
+      file:
+        state: touch
+        path: /home/travis/foo/test.txt
+    # - name: Import dns role
+    #   import_role:
+    #     name: traviss25.dev.dns
+    #     tasks_from: corefile
+    #   vars:
+    # file_path: /home/travis/Corefile
+    # records:
+    #   - name: pac-dev.com:1053
+    #     blocks:
+    #       - name: file
+    #         parameters:
+    #           - /etc/coredns/zones/db.pac-dev.com
+    #       - name: auto
+    #         parameters:
+    #           - pac-dev.com
+    #         blocks:
+    #           - name: directory
+    #             parameters:
+    #               - /etc/coredns/zones
+    #           - name: reload
+    #             parameters:
+    #               - 2s
+    #           - name: testblock
+    #             blocks:
+    #               - name: something
+    #                 parameters:
+    #                   - someparameter1
+    #               - name: someelse
+    #                 parameters:
+    #                   - someparameter2
+
+    # - name: Debug loop
+    #   debug:
+    #     msg: "{{ vagrant_content }}"
 
     # - name: Set dev facts
     #   set_fact:

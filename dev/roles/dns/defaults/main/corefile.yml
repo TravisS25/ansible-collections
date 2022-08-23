@@ -1,0 +1,3 @@
+corefile_defaults:
+  root_dir: /etc/coredns
+  state: create

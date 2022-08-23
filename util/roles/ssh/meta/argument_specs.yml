@@ -8,10 +8,10 @@ argument_specs:
         type: str
         required: true
         description: IP of host we want to copy localhost ssh to
-      user:
+      username:
         type: str
         required: true
-        description: User of remote host to copy ssh keys to
+        description: Username of remote host to copy ssh keys to
       password:
         type: str
         required: true

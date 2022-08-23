@@ -1,0 +1,9 @@
+---
+- name: Import disk task
+  when: disks is defined and disks | length > 0
+  loop: "{{ disks }}"
+  include_task: disk.yml
+  vars:
+    vm_name: "{{ vm_name }}"
+    project_root: "{{ project_root }}"
+    disk: "{{ item }}"

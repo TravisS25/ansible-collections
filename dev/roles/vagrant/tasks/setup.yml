@@ -1,0 +1,22 @@
+---
+- name: Import install task
+  import_task: install.yml
+  vars:
+    vm_provider: "{{ vm_provider }}"
+    project_root: "{{ project_root }}"
+
+- name: Import content task
+  import_task: content.yml
+  vars:
+    ip: "{{ ip }}"
+    hostname: "{{ hostname }}"
+    vagrant_content_list_hostvar: "{{ vagrant_content_list_hostvar }}"
+    vagrant_content_hostvar: "{{ vagrant_content_hostvar }}"
+    vagrant: "{{ vagrant }}"
+
+- name: Import run task
+  import_task: run.yml
+  vars:
+    vm_provider: "{{ vm_provider }}"
+    project_root: "{{ project_root }}"
+    content: "{{ hostvars['localhost'][vagrant_content_hostvar] }}"

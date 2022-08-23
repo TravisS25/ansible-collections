@@ -1,4 +1,0 @@
----
-- name: Debug default
-  debug:
-    msg: "{{ msg }}"

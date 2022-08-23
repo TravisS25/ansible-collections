@@ -1,0 +1,7 @@
+---
+- name: Pull coredns docker image
+  import_role:
+    name: traviss25.docker.docker
+    tasks_from: image_pull
+  vars:
+    image: coredns/coredns:{{ coredns_version | default(install_defaults.coredns_version) }}

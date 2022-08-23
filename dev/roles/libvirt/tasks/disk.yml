@@ -1,7 +1,10 @@
 ---
 - name: Set libvirt disk facts
   set_fact:
-    disk_img_dir: "{{ project_root }}/disks"
+    disk_img_dir: "{{ project_root }}/libvirt/disks"
+
+- name: Set
+  set_fact:
     disk_img_path: "{{ disk_img_dir }}/{{ disk.name }}.img"
 
 - name: Create dir for disk images

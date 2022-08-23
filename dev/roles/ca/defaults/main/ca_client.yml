@@ -1,0 +1,8 @@
+---
+ca_client_defaults:
+  key:
+    dir_path: /etc/ssl/ca-keys
+    filename: ca.key
+  cert:
+    file_path: /etc/ssl/ca-certs
+    file_name: ca.crt

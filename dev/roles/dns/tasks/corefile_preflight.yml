@@ -1,0 +1,14 @@
+---
+- name: Create or append block
+  when: state == 'create' or state == 'append'
+  block:
+    - name: Assert records is defined and has at least one item
+      assert:
+        that: records is defined and records | length > 0
+
+    - name: Assert properties defined in records
+      loop: "{{ records | subelements('blocks') }}"
+      assert:
+        that:
+          - item.0.name is defined
+          - item.1.name is defined

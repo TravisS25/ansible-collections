@@ -1,4 +1,8 @@
 ---
+- name: Update hostname
+  hostname:
+    name: "{{ droplet.hostname }}"
+
 - name: Create user
   when: droplet.user_creds
   import_role:

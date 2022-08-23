@@ -129,30 +129,44 @@ mounts: &mounts_ref
   - *mount3_ref
   - *mount4_ref
 
+ca_server_ip: &ca_server_ip_ref 192.168.2.2
+pac_server1_ip: &pac_server1_ip_ref 192.168.2.3
+pac_server2_ip: &pac_server2_ip_ref 192.168.2.4
+pac_server3_ip: &pac_server3_ip_ref 192.168.2.5
+pac_server4_ip: &pac_server4_ip_ref 192.168.2.6
+
 config:
   vm_provider: libvirt
   project_root: ~/.vagrant_projects/pac/libvirt
 
-  ca_droplet:
-    ip: 192.168.2.2
-    hostname: ca-server
-    user_creds: *user_creds_ref
-    ca:
-      domains:
-        - "*.pac-dev.com"
-    vagrant:
-      name: ca-server
-      box: *vm_box_image_ref
-      specs: *specs_ref
-
   droplets:
-    - ip: 192.168.2.3
-      hostname: pac-server2
+    - ip: *ca_server_ip_ref
+      hostname: pac-ca-server
+      user_creds: *user_creds_ref
+      ca:
+        server: {}
+      vagrant:
+        name: pac-ca-server
+        box: *vm_box_image_ref
+        specs: *specs_ref
+      docker_containers:
+        - name: busybox
+          image: busybox:1.35.0
+    - ip: *pac_server1_ip_ref
+      hostname: pac-server1
       user_creds: *user_creds_ref
       host_file_list: *host_file_list_ref
       mounts: *mounts_ref
+      ca:
+        client:
+          #ip: *pac_server1_ip_ref
+          ca_server:
+            ip: *ca_server_ip_ref
+          subject_alt_names:
+            - "DNS:minio1.pac-dev.com"
+            - "DNS:pac-server1.pac-dev.com"
       vagrant:
-        name: pac-server2
+        name: pac-server1
         box: *vm_box_image_ref
         specs: *specs_ref
         disks: *disks_ref
@@ -175,11 +189,41 @@ config:
         - *grafana_docker_ref
         - *prometheus_docker_ref
         - *minio_docker_ref
-    - ip: 192.168.2.4
+    - ip: *pac_server2_ip_ref
+      hostname: pac-server2
+      user_creds: *user_creds_ref
+      host_file_list: *host_file_list_ref
+      mounts: *mounts_ref
+      ca:
+        client:
+          #ip: *pac_server2_ip_ref
+          ca_server:
+            ip: *ca_server_ip_ref
+          subject_alt_names:
+            - "DNS:minio2.pac-dev.com"
+            - "DNS:pac-server2.pac-dev.com"
+      vagrant:
+        name: pac-server2
+        box: *vm_box_image_ref
+        specs: *specs_ref
+        disks: *disks_ref
+      docker_containers:
+        - *node_exporter_docker_ref
+        - *cockroachdb_docker_ref
+        - *minio_docker_ref
+    - ip: *pac_server3_ip_ref
       hostname: pac-server3
       user_creds: *user_creds_ref
       host_file_list: *host_file_list_ref
       mounts: *mounts_ref
+      ca:
+        client:
+          #ip: *pac_server3_ip_ref
+          ca_server:
+            ip: *ca_server_ip_ref
+          subject_alt_names:
+            - "DNS:minio3.pac-dev.com"
+            - "DNS:pac-server3.pac-dev.com"
       vagrant:
         name: pac-server3
         box: *vm_box_image_ref
@@ -189,27 +233,21 @@ config:
         - *node_exporter_docker_ref
         - *cockroachdb_docker_ref
         - *minio_docker_ref
-    - ip: 192.168.2.5
+    - ip: *pac_server4_ip_ref
       hostname: pac-server4
       user_creds: *user_creds_ref
       host_file_list: *host_file_list_ref
       mounts: *mounts_ref
+      ca:
+        client:
+          #ip: *pac_server4_ip_ref
+          ca_server:
+            ip: *ca_server_ip_ref
+          subject_alt_names:
+            - "DNS:minio4.pac-dev.com"
+            - "DNS:pac-server4.pac-dev.com"
       vagrant:
         name: pac-server4
-        box: *vm_box_image_ref
-        specs: *specs_ref
-        disks: *disks_ref
-      docker_containers:
-        - *node_exporter_docker_ref
-        - *cockroachdb_docker_ref
-        - *minio_docker_ref
-    - ip: 192.168.2.6
-      hostname: pac-server5
-      user_creds: *user_creds_ref
-      host_file_list: *host_file_list_ref
-      mounts: *mounts_ref
-      vagrant:
-        name: pac-server5
         box: *vm_box_image_ref
         specs: *specs_ref
         disks: *disks_ref
