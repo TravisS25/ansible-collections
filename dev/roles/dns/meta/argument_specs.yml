@@ -23,7 +23,12 @@ zone_options: &zone_options_ref
   file_state: *state_ref
   zone_settings:
     type: dict
-    description: Settings to be used in file
+    description: Settings to be used in zone file
+    options:
+      soa:
+        type: dict
+        required: true
+        description: SOA settings of zone file
 
 corefile_options: &corefile_options_ref
   root_dir:
