@@ -1,27 +1,9 @@
 ---
-cert_options: &cert_options_ref
-  cert:
-    type: dict
-    description: Settings for cert
-
 storage_path_options: &storage_path_options_ref
   storage_path:
     type: str
     required: true
     description: Default storage directory docker container writes to on host
-
-minio_options: &minio_options_ref
-  hostname:
-    type: str
-    required: true
-    description: Name of host to start server on
-  protocol:
-    type: str
-    required: true
-    description: Determines what protocol to use connect other nodes
-    choices:
-      - http
-      - https
 
 docker_container_options: &docker_container_options_ref
   image:
@@ -38,21 +20,40 @@ docker_container_options: &docker_container_options_ref
       - stop
       - restart
 
-argument_specs:
-  alert_manager:
-    short_description: Docker container actions for alert manager
+alert_manager_options: &alert_manager_options_ref
+  vars:
+    type: dict
+    required: true
+    description: Generic vars for alert manager
     options:
       <<: [*docker_container_options_ref, *storage_path_options_ref]
 
-  cockroachdb:
-    short_description: Docker container actions for cockroachdb
+cockroachdb_options: &cockroachdb_options_ref
+  vars:
+    type: dict
+    required: true
+    description: Generic vars for cockroachdb
     options:
       <<: [*docker_container_options_ref, *storage_path_options_ref]
 
-  minio:
-    short_description: Docker container actions for minio
+minio_options: &minio_options_ref
+  vars:
+    type: dict
+    required: true
+    description: Generic vars for minio
     options:
       <<: [*docker_container_options_ref, *storage_path_options_ref]
+      hostname:
+        type: str
+        required: true
+        description: Name of host to start server on
+      protocol:
+        type: str
+        required: true
+        description: Determines what protocol to use connect other nodes
+        choices:
+          - http
+          - https
       distributed_mode:
         type: dict
         description: Object for settings on distributed mode for minio
@@ -66,20 +67,91 @@ argument_specs:
             required: true
             description: Number of hosts apart of cluster
 
+node_exporter_options: &node_exporter_options_ref
+  vars:
+    type: dict
+    required: true
+    description: Generic vars for node exporter
+    options:
+      <<: *docker_container_options_ref
+
+prometheus_options: &prometheus_options_ref
+  vars:
+    type: dict
+    required: true
+    description: Generic vars for prometheus
+    options:
+      <<: *docker_container_options_ref
+
+grafana_options: &grafana_options_ref
+  vars:
+    type: dict
+    required: true
+    description: Generic vars for grafana
+    options:
+      <<: *docker_container_options_ref
+
+redis_options: &redis_options_ref
+  vars:
+    type: dict
+    required: true
+    description: Generic vars for redis
+    options:
+      <<: [*docker_container_options_ref, *storage_path_options_ref]
+
+argument_specs:
+  alert_manager:
+    short_description: Docker container actions for alert manager
+    options: *alert_manager_options_ref
+
+  alert_manager_preflight:
+    short_description: Alertmanager preflight
+    options: *alert_manager_options_ref
+
+  cockroachdb:
+    short_description: Docker container actions for cockroachdb
+    options: *cockroachdb_options_ref
+
+  cockroachdb_preflight:
+    short_description: Cockroachdb preflight
+    options: *cockroachdb_options_ref
+
+  minio:
+    short_description: Docker container actions for minio
+    options: *minio_options_ref
+
+  minio_preflight:
+    short_description: Minio preflight
+    options: *minio_options_ref
+
   node_exporter:
     short_description: Docker container actions for node exporter
-    options: *docker_container_options_ref
+    options: *node_exporter_options_ref
+
+  node_exporter_preflight:
+    short_description: Node exporter preflight
+    options: *node_exporter_options_ref
 
   prometheus:
     short_description: Docker container actions for prometheus
-    options: *docker_container_options_ref
+    options: *prometheus_options_ref
+
+  prometheus_preflight:
+    short_description: Prometheus preflight
+    options: *prometheus_options_ref
 
   grafana:
     short_description: Docker container actions for grafana
-    options:
-      <<: [*docker_container_options_ref]
+    options: *grafana_options_ref
+
+  grafana_preflight:
+    short_description: Grafana preflight
+    options: *grafana_options_ref
 
   redis:
     short_description: Docker container actions for redis
-    options:
-      <<: [*docker_container_options_ref, *storage_path_options_ref]
+    options: *redis_options_ref
+
+  redis_preflight:
+    short_description: Redis preflight
+    options: *redis_options_ref

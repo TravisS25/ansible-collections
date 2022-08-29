@@ -2,11 +2,11 @@
 - name: Create cockroach storage path
   file:
     state: directory
-    path: "{{ storage_path }}"
+    path: "{{ vars.storage_path }}"
 
 - name: Set join cluster command fact
   set_fact:
-    cockroachdb_command: "start --insecure --join={{ host }}"
+    cockroachdb_command: "start --insecure --join={{ vars.host }}"
 
 - name: Set cockroachdb container facts
   set_fact:
@@ -17,18 +17,18 @@
       publish_all_ports: yes
       command: "{{ cockroachdb_command }}"
       mounts:
-        - source: "{{ storage_path }}"
+        - source: "{{ vars.storage_path }}"
           target: /cockroach/cockroach-data
 
 - name: Import container action task for cockroachdb
   import_task: container_action.yaml
   vars:
-    action: "{{ action }}"
-    image: "{{ image }}"
+    action: "{{ vars.action }}"
+    image: "{{ vars.image }}"
     params: *cockroachdb_container_ref
 
 - name: Init cluster block
-  when: cockroachdb_init_cluster and action == 'start'
+  when: cockroachdb_init_cluster and vars.action == 'start'
   block:
     - name: Set init cluster command fact
       with_dict: "{{ cockroachdb_container }}"
@@ -39,6 +39,6 @@
     - name: Init cockroachdb cluster
       import_task: container_action.yaml
       vars:
-        action: "{{ action }}"
-        image: "{{ image }}"
+        action: "{{ vars.action }}"
+        image: "{{ vars.image }}"
         params: *cockroachdb_container_ref

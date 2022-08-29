@@ -2,7 +2,7 @@
 - name: Create grafana storage path
   file:
     state: directory
-    path: "{{ storage_path }}"
+    path: "{{ vars.storage_path }}"
 
 - name: Set grafana container facts
   set_fact:
@@ -12,13 +12,13 @@
       restart_policy: always
       publish_all_ports: yes
       mounts:
-        - source: "{{ storage_path }}"
+        - source: "{{ vars.storage_path }}"
           target: /var/lib/grafana
 
 - name: Import container action task for cockroachdb
   import_task: container_action.yaml
   vars:
-    action: "{{ action }}"
-    image: "{{ image }}"
+    action: "{{ vars.action }}"
+    image: "{{ vars.image }}"
     params:
       <<: *grafana_container_ref

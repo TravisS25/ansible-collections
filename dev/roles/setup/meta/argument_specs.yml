@@ -1,114 +1,22 @@
 ---
-vm_provider: &vm_provider_ref
-  type: str
-  default: virtualbox
-  description: Determines what vm provider to install
-  choices:
-    - virtualbox
-    - libvirt
-
-project_root: &project_root_ref
-  type: str
-  required: true
-  description: Root project folder to store vagrant info
-
-disk_options: &disk_options_ref
-  name:
+vm_provider_install_options: &vm_provider_install_options_ref
+  vm_provider:
     type: str
-    required: true
-    description: Name of disk
-  size:
-    type: int
-    required: true
-    description: Size of disk in GB
-
-vm_name: &vm_name_ref
-  type: str
-  required: true
-  description: Name of vm which should be unique
+    default: virtualbox
+    description: Determines what vm provider to install
+    choices:
+      - virtualbox
+      - libvirt
 
 argument_specs:
-  ca_droplet:
-    short_description: Setup dev ca server
-    description: Setup dev ca server so other vms apart of dev build can have certified ca
-    options:
-      ip:
-        type: str
-        required: true
-        description: IP of ca droplet
-      ca:
-        type: dict
-        required: true
-        description: Settings for ca server
-        options:
-          cert:
-            type: dict
-            description: Settings to store the CA's cert
-            options:
-              dir_path:
-                type: str
-                default: /etc/ssl/ca-certs
-                description: Root directory path where to store certs
-              filename:
-                type: str
-                default: ca.pem
-                description: Filename of private key
-          private_key:
-            type: dict
-            description: Settings to store the CA's private key
-            options:
-              dir_path:
-                type: str
-                default: /etc/ssl/ca-keys
-                description: Root directory path where to store keys
-              filename:
-                type: str
-                default: ca.key
-                description: Filename of private key
-
-          # cert:
-          #   type: dict
-          #   description: Certificate settings of where to store generated cert
-          #   options:
-          #     file_path:
-          #       type: str
-          #       default: /etc/mkcert/
-          #       description: |
-          #         Directory path to store cert.  Will create directories if don't exist
-          #         Should end with '/'
-          #     file_name:
-          #       type: str
-          #       default: dev.pem
-          #       description: Name of cert name
-          domains:
-            type: list
-            required: true
-            description: List of domains for server to make certs for
-      user_creds:
-        type: dict
-        required: true
-        description: User creds for droplet
-        options:
-          username:
-            type: str
-            required: true
-            description: Username that will be created for droplet
-          password:
-            type: str
-            required: true
-            description: Password for user that will be created for droplet
-
   vm_provider_install:
     short_description: Install vm provider
     description: Determine what vm provider to install based on passed provider
-    options:
-      vm_provider:
-        type: str
-        default: virtualbox
-        description: Determines what vm provider to install
-        choices:
-          - virtualbox
-          - libvirt
+    options: *vm_provider_install_options_ref
+
+  vm_provider_install_preflight:
+    short_description: vm install preflight
+    options: *vm_provider_install_options_ref
 
   update_hosts_file:
     short_description: Updates host file

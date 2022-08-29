@@ -2,16 +2,16 @@
 - name: Create prometheus storage path
   file:
     state: directory
-    path: "{{ storage_path }}"
+    path: "{{ vars.storage_path }}"
 
 - name: Import container action task for prometheus
   import_task: container_action.yaml
   vars:
-    action: "{{ action }}"
+    action: "{{ vars.action }}"
     params:
       name: prometheus
       hostname: prometheus
-      image: "{{ image }}"
+      image: "{{ vars.image }}"
       restart_policy: always
       publish_all_ports: yes
       command:
@@ -19,5 +19,5 @@
         - --storage.tsdb.path=/etc/prometheus/data/
         - --config.file=/etc/prometheus/prometheus.yml
       mounts:
-        - source: "{{ storage_path }}"
+        - source: "{{ vars.storage_path }}"
           target: /etc/prometheus/data/

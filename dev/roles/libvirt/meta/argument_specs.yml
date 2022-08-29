@@ -19,22 +19,34 @@ vm_name: &vm_name_ref
   required: true
   description: Name of vm which should be unique
 
+main_options: &main_options_ref
+  vm_name: *vm_name_ref
+  project_root: *project_root_ref
+  disks:
+    type: list
+    elements: dict
+    description: List of disk objects to create disks for libvirt
+    options: *disk_options_ref
+
+disk_task_options: &disk_task_options_ref
+  vm_name: *vm_name_ref
+  project_root: *project_root_ref
+  disk: *disk_options_ref
+
 argument_specs:
-  setup:
+  main:
     short_description: Sets up libvirt environment
     description: Sets up libvirt environment if that is the chosen provider in playbook
-    options:
-      vm_name: *vm_name_ref
-      project_root: *project_root_ref
-      disks:
-        type: list
-        elements: dict
-        description: List of disk objects to create disks for libvirt
-        options: *disk_options_ref
+    options: *main_options_ref
+
+  main_preflight:
+    short_description: Main preflight
+    options: *main_options_ref
 
   disk:
     short_description: Creates/attaches disks for libvirt vm
-    options:
-      vm_name: *vm_name_ref
-      project_root: *project_root_ref
-      disk: *disk_options_ref
+    options: *disk_task_options_ref
+
+  disk_preflight:
+    short_description: Disk preflight
+    options: *disk_task_options_ref

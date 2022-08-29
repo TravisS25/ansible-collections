@@ -31,46 +31,103 @@ from_collection: &from_collection_ref
   default: false
   description: Determine whether to use premade image template for container/compose
 
+install_options: &install_options_ref
+  username:
+    type: str
+    description: Username to add to docker group that is created
+  docker_version:
+    type: str
+    default: 5:20.10.17~3-0~ubuntu-focal
+
+image_pull_options: &image_pull_options_ref
+  image:
+    type: str
+    required: true
+    description: Name of docker image to pull
+
+container_options: &container_options_ref
+  container:
+    type: dict
+    required: true
+    description: Container settings
+    options:
+      <<: [*base_docker_options_ref, *base_docker_container_options_ref]
+      from_collection: *from_collection_ref
+
+container_action_options: &container_action_options_ref
+  container:
+    type: dict
+    required: true
+    description: Container settings
+    options:
+      <<: [*base_docker_options_ref, *base_docker_container_options_ref]
+
+compose_service_options: &compose_service_options_ref
+  compose:
+    type: dict
+    required: true
+    description: Container settings
+    options:
+      <<: *base_docker_options_ref
+      from_collection: *from_collection_ref
+
+compose_action_options: &compose_action_options_ref
+  compose:
+    type: dict
+    required: true
+    description: Container settings
+    options:
+      <<: *base_docker_options_ref
+
 argument_specs:
   install:
     short_description: Installs docker
     description: Installs docker on box and will skip if already on box
-    options:
-      username:
-        type: str
-        description: Username to add to docker group that is created
-      docker_version:
-        type: str
-        default: 5:20.10.17~3-0~ubuntu-focal
+    options: *install_options_ref
+
+  install_preflight:
+    short_description: Install preflight
+    options: *install_options_ref
 
   image_pull:
     short_description: Pulls docker image
     description: Pulls docker image based on docker image name given
-    options:
-      image:
-        type: str
-        required: true
-        description: Name of docker image to pull
+    options: *image_pull_options_ref
+
+  image_pull_preflight:
+    short_description: Image preflight
+    options: *image_pull_options_ref
 
   container:
     short_description: Operate on docker container
     description: Operate on docker container depending on docker type and run action
-    options:
-      from_collection: *from_collection_ref
-      <<: [*base_docker_options_ref, *base_docker_container_options_ref]
+    options: *container_options_ref
+
+  container_preflight:
+    short_description: Container preflight
+    options: *container_options_ref
 
   container_action:
     short_description: Determines docker container action
-    options:
-      <<: [*base_docker_options_ref, *base_docker_container_options_ref]
+    options: *container_action_options_ref
+
+  container_action_preflight:
+    short_description: Container action preflight
+    options: *container_action_options_ref
 
   compose_service:
     short_description: Operate on docker compose app
     description: Operate on docker compose app depending on settings passed
-    options:
-      from_collection: *from_collection_ref
-      <<: *base_docker_options_ref
+    options: *compose_service_options_ref
+
+  compose_service_preflight:
+    short_description: Compose service preflight
+    options: *compose_service_options_ref
 
   compose_action:
     short_description: Perform action on docker compose app
-    options: *base_docker_options_ref
+    options: *compose_action_options_ref
+
+  compose_action_preflight:
+    short_description: Perform action on docker compose app
+    options: *compose_action_options_ref

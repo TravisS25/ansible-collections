@@ -1,0 +1,33 @@
+Vagrant.configure("2") do |config|
+    {% for vagrant in vagrants %}
+    config.vm.define "{{ vagrant.name }}" do |machine|
+        machine.vm.hostname = {{ hostname }}
+        machine.vm.box = {{ vagrant.box }}
+        {% if 'box_version' in vagrant %}
+        machine.vm.box_version = {{ vagrant.box_version }}
+        {% endif %}
+        
+        machine.vm.network "public_network" ip: "{{ ip }}"
+
+        {% if 'disks' in vagrant %}
+        {% for disk in vagrant.disks %}
+        machine.vm.disk :disk, name: "{{ disk.name }}", size: "{{ disk.size }}GB"
+        {% endfor %}
+        {% endif %}
+
+        {% if 'specs' in vagrant %}
+        machine.vm.provider :{{ vm_provider }} do |v|
+          {% if 'memory' in vagrant.specs %}
+          v.memory = {{ vagrant.specs.memory }}
+          {% endif %}
+          {% if 'cpus' in vagrant.specs %}
+          v.cpus = {{ vagrant.specs.cpus }}
+          {% endif %}
+          {% if vm_provider == 'libvirt' %}
+          v.default_prefix = ""
+          {% endif %}
+        end
+        {% endif %}
+    end
+    {% endfor %}
+end

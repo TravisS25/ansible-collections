@@ -1,2 +1,28 @@
 ---
-# tasks file for dns
+- name: DNS server block
+  when: server is defined
+  block:
+    - name: Import coredns install
+      import_task: install.yml
+      vars:
+        coredns_version: "{{ server.coredns_version | default(omit) }}"
+
+    - name: Import corefile task
+      import_task: corefile.yml
+      vars:
+        file_state: "{{ server.corefile.file_state }}"
+        root_dir: "{{ server.corefile.root_dir }}"
+        records: "{{ server.corefile.records }}"
+
+    - name: Import host file task
+      loop: "{{ server.hosts }}"
+      import_task: host_file.yml
+      vars:
+        file_state: "{{ item.file_state }}"
+        root_dir: "{{ item.root_dir }}"
+        host_file: "{{ item.host_file }}"
+        records: "{{ item.records }}"
+
+- name: DNS client block
+  when: client is defined
+  block:

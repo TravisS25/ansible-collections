@@ -1,0 +1,8 @@
+---
+- name: Assert entries are set when updating host file
+  when: file_state == 'update'
+  loop: "{{ records }}"
+  assert:
+    that:
+      - item.change_to_ip is defined
+      - item.change_to_host is defined

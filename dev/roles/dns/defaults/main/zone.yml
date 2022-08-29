@@ -1,4 +1,0 @@
----
-zone_defaults:
-  root_dir: /etc/coredns/zones
-  state: create

@@ -1,18 +1,24 @@
 ---
+create_options: &create_options_ref
+  username:
+    type: str
+    required: true
+    description: Username that will be created on box
+  password:
+    type: str
+    required: true
+    description: Password to use for user
+  groups:
+    type: list
+    required: true
+    description: List of groups user will be added to
+
 argument_specs:
   create:
     short_description: Create user with groups
     description: Creates a user, password and groups along with generating ssh key to be able to log into account
-    options:
-      username:
-        type: str
-        required: true
-        description: Username that will be created on box
-      password:
-        type: str
-        required: true
-        description: Password to use for user
-      groups:
-        type: list
-        required: true
-        description: List of groups user will be added to
+    options: *create_options_ref
+
+  create_preflight:
+    short_description: Create preflight
+    options: *create_options_ref

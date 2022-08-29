@@ -1,0 +1,23 @@
+---
+- name: Import docker role container(s) from collection
+  when: container.from_collection
+  import_role:
+    name: traviss25.docker.docker_container_collection
+    tasks_from: "{{ container.name }}"
+  vars:
+    name: "{{ container.name }}"
+    image: "{{ container.image }}"
+    action: "{{ container.action }}"
+    vars: "{{ container.vars }}"
+    params: "{{ container.params }}"
+
+- name: Import docker role container(s)
+  when: not container.from_collection
+  import_role:
+    name: traviss25.docker.docker
+    tasks_from: container_action
+  vars:
+    name: "{{ container.name }}"
+    image: "{{ container.image }}"
+    action: "{{ container.action }}"
+    params: "{{ container.params }}"

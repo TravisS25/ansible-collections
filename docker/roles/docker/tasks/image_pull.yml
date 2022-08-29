@@ -1,6 +1,6 @@
 ---
 - name: Pull docker image
-  community.docker.image:
+  community.docker.docker_image:
     name: "{{ image }}"
     source: pull
     pull:

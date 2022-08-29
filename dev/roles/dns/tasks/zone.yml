@@ -1,4 +1,0 @@
----
-- name: Set base zone facts
-  set_fact:
-    root_dir: "{{ root_dir | default(zone_defaults.root_dir) }}"

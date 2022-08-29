@@ -14,8 +14,6 @@
       set_fact:
         vagrant_content_hostvar: "vagrant_content"
         vagrant_content_list_hostvar: "vagrant_content_list"
-        ca_dict:
-          test: here
 
     - name: Import config vars from file
       include_vars:
@@ -31,7 +29,7 @@
       set_fact:
         ansible_root_dir: "{{ lookup('env', 'ANSIBLE_ROOT') }}"
 
-    - name: Verify ansible root env variable value
+    - name: Assert ansible root env variable value
       assert:
         that: ansible_root_dir != ''
         fail_msg: 'Env variable "ANSIBLE_ROOT" is undefined'

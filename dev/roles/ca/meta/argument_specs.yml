@@ -2,7 +2,7 @@
 base_ca_options: &base_ca_options_ref
   cert:
     type: dict
-    description: Settings to store the CA's cert
+    description: Settings to store the host cert
     options:
       dir_path:
         type: str
@@ -14,7 +14,7 @@ base_ca_options: &base_ca_options_ref
         description: Filename of private key
   key:
     type: dict
-    description: Settings to store the CA's private key
+    description: Settings to store the host private key
     options:
       dir_path:
         type: str
@@ -25,7 +25,11 @@ base_ca_options: &base_ca_options_ref
         default: ca.key
         description: Filename of private key
 
-base_client_options: &base_client_options_ref
+server_options: &server_options_ref
+  <<: *base_ca_options_ref
+
+client_options: &client_options_ref
+  <<: *base_ca_options_ref
   ip:
     type: str
     required: true
@@ -35,25 +39,32 @@ base_client_options: &base_client_options_ref
     required: true
     elements: str
     description: List of names to represent current host
+  ca_server:
+    type: dict
+    required: true
+    description: Object settings for CA server
+    options:
+      <<: *base_ca_options_ref
+      ip:
+        type: str
+        required: true
+        description: IP of CA server to get cert signed by
 
 argument_specs:
   server:
     short_description: Sets up CA server
     description: Sets up CA server so other droplets can use it for ssl
-    options: *base_ca_options_ref
+    options: *server_options_ref
+
+  server_preflight:
+    short_description: Server preflight
+    options: *server_options_ref
 
   client:
     short_description: Sets up client for CA
     description: Sets up client to make a CSR to our CA
-    options:
-      <<: [*base_ca_options_ref, *base_client_options_ref]
-      ca_server:
-        type: dict
-        required: true
-        description: Object settings for CA server
-        options:
-          <<: *base_ca_options_ref
-          ip:
-            type: str
-            required: true
-            description: IP of CA server to get cert signed by
+    options: *client_options_ref
+
+  client_preflight:
+    short_description: Client preflight
+    options: *client_options_ref

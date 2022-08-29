@@ -1,4 +1,8 @@
 ---
+- name: Set provider install facts
+  set_fact:
+    vm_provider: "{{ vm_provider | default(vm_provider_install_defaults.vm_provider) }}"
+
 - name: Update repository cache
   apt:
     update_cache: yes
@@ -29,4 +33,3 @@
           - ruby-dev
           - libguestfs-tools
           - virt-manager
-    

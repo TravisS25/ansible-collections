@@ -1,21 +1,21 @@
 ---
 - name: Import docker compose role(s) from collection
-  when: from_collection
+  when: compose.from_collection
   import_role:
     name: traviss25.docker.docker_compose_collection
-    tasks_from: "{{ name }}"
+    tasks_from: "{{ compose.name }}"
   vars:
-    name: "{{ name }}"
-    action: "{{ action }}"
-    vars: "{{ vars }}"
-    params: "{{ params }}"
+    name: "{{ compose.name }}"
+    action: "{{ compose.action }}"
+    vars: "{{ compose.vars }}"
+    params: "{{ compose.params }}"
 
 - name: Import docker compose role(s)
-  when: not from_collection
+  when: not compose.from_collection
   import_role:
     name: traviss25.docker.docker
     tasks_from: compose_action
   vars:
-    name: "{{ name }}"
-    action: "{{ action }}"
-    params: "{{ params }}"
+    name: "{{ compose.name }}"
+    action: "{{ compose.action }}"
+    params: "{{ compose.params }}"

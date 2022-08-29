@@ -1,5 +1,4 @@
 {% set indent = 4 %}
-
 {% for server_block in server_blocks %}
 {{ server_block.name }} {
 {% for block in server_block.blocks recursive %}
@@ -13,4 +12,5 @@
 {% endif %}
 {% endfor %}
 }
+
 {% endfor %}

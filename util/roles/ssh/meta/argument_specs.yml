@@ -1,18 +1,24 @@
 ---
+pass_key_options: &pass_key_options_ref
+  ip:
+    type: str
+    required: true
+    description: IP of host we want to copy localhost ssh to
+  username:
+    type: str
+    required: true
+    description: Username of remote host to copy ssh keys to
+  password:
+    type: str
+    required: true
+    description: Password of remote user to authenticate with
+
 argument_specs:
   pass_key:
     short_description: Sets up ssh remote access
     description: Sets up ssh remote access so localhost user can log into machines by key
-    options:
-      ip:
-        type: str
-        required: true
-        description: IP of host we want to copy localhost ssh to
-      username:
-        type: str
-        required: true
-        description: Username of remote host to copy ssh keys to
-      password:
-        type: str
-        required: true
-        description: Password of remote user to authenticate with
+    options: *pass_key_options_ref
+
+  pass_key_preflight:
+    short_description: Pass key preflight
+    options: *pass_key_options_ref

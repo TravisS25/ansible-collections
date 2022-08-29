@@ -1,207 +1,76 @@
 ---
-base_docker_options: &base_docker_options_ref
-  from_collection:
-    type: bool
-    default: false
-    description: Determine whether to use container from docker collection/compose role
-  name:
-    type: str
+droplet_options: &droplet_options_ref
+  droplet:
+    type: dict
     required: true
-    description: Docker container/compose name to install on droplet
-  action:
-    type: str
-    default: start
-    description: Docker action to perform on container/compose
-    choices:
-      - start
-      - restart
-      - stop
-  vars:
-    type: dict
-    description: Various vars that can be used in roles file
-  params:
-    type: dict
-    description: |
-      Params that are used in the community.docker.docker_container/community.docker.docker_compose module
-
-base_ca_options: &base_ca_options_ref
-  cert:
-    type: dict
-    description: Settings to store the CA's cert
+    description: The droplet that will be set up
     options:
-      dir_path:
+      ip:
         type: str
-        default: /etc/ssl/ca-certs
-        description: Root directory path where to store certs
-      filename:
+        required: true
+        description: IP of droplet
+      hostname:
         type: str
-        default: ca.pem
-        description: Filename of private key
-  key:
-    type: dict
-    description: Settings to store the CA's private key
-    options:
-      dir_path:
-        type: str
-        default: /etc/ssl/ca-keys
-        description: Root directory path where to store keys
-      filename:
-        type: str
-        default: ca.key
-        description: Filename of private key
+        required: true
+        description: Hostname of droplet
+      dns:
+        type: dict
+        description: Passthough
+      ca:
+        type: dict
+        description: Passthough
+      vagrant:
+        type: dict
+        description: Passthough
+      user_creds:
+        type: dict
+        required: true
+        description: User creds for droplet
+        options:
+          username:
+            type: str
+            required: true
+            description: Username that will be created for droplet
+          password:
+            type: str
+            required: true
+            description: Password for user that will be created for droplet
+          groups:
+            type: list
+            required: true
+            description: List of groups that the user will be apart of
+      mounts:
+        type: list
+        elements: dict
+        description: List of dicts that determine what device to mount and where
+        options:
+          mount_point:
+            type: str
+            required: true
+            description: Mount point to mount device
+          device:
+            type: str
+            required: true
+            description: Device to mount
+          fstype:
+            type: str
+            required: true
+            description: File system type to apply to disk
+      docker_composes:
+        type: list
+        elements: dict
+        description: Passthough
+      docker_containers:
+        type: list
+        elements: dict
+        required: true
+        description: Passthough
 
 argument_specs:
   droplet:
     short_description: Creates droplet
     description: Creates droplet based on settings passed
-    options:
-      droplet:
-        type: dict
-        required: true
-        description: The droplet that will be set up
-        options:
-          ip:
-            type: str
-            required: true
-            description: IP of droplet
-          hostname:
-            type: str
-            required: true
-            description: Hostname of droplet
-          ca:
-            type: dict
-            description: Placeholder
-            # description: |
-            #   This should only be used for dev environment only.
-            #   This will set up CA server and clients to use as their CA
-            # options:
-            #   server:
-            #     type: dict
-            #     description: |
-            #       If this is set, this droplet will be considered the CA
-            #       This object consists of settings for becoming CA
-            #     options: *base_ca_options_ref
-            #   client:
-            #     type: dict
-            #     description: |
-            #       If this is set, this droplet will be considered a client to
-            #       for CA. This object consists of settings for getting cert signed by CA
-            #     options:
-            #       <<: *base_ca_options_ref
-            #       subject_alt_names:
-            #         type: list
-            #         required: true
-            #         elements: str
-            #         description: List of names to represent current host
-            #       ca_server:
-            #         type: dict
-            #         required: true
-            #         description: Object settings for CA server
-            #         options:
-            #           <<: *base_ca_options_ref
-            #           ip:
-            #             type: str
-            #             required: true
-            #             description: IP of CA server to get cert signed by
-          vagrant:
-            type: dict
-            description: Vagrant object for setting up test environment
-            options:
-              name:
-                type: str
-                required: true
-                description: Name of vm for whatever provider
-              box:
-                type: str
-                required: true
-                description: VM image to use for whatever provider
-              specs:
-                type: dict
-                description: Hardware specs of vm for whatever provider
-                options:
-                  memory:
-                    type: int
-                    description: Memory in MBs allocated to vm
-                  cpus:
-                    type: int
-                    description: Number of cpus allocated to vm
-              disks:
-                type: list
-                elements: dict
-                description: List of disk objects with settings
-                options:
-                  name:
-                    type: str
-                    required: true
-                    description: Name of disk
-                  size:
-                    type: int
-                    required: true
-                    description: Size of disk in GBs
-          host_file_list:
-            type: list
-            elements: dict
-            description: List of hosts to apply to /etc/hosts file
-            options:
-              ip:
-                type: str
-                required: true
-                description: IP of host to add to /etc/hosts file
-              hostname:
-                type: str
-                required: true
-                description: Hostname of host to add to /etc/hosts file
-              fqdn:
-                type: str
-                required: true
-                description: FQDN of host to add to /etc/hosts file
-          user_creds:
-            type: dict
-            required: true
-            description: User creds for droplet
-            options:
-              username:
-                type: str
-                required: true
-                description: Username that will be created for droplet
-              password:
-                type: str
-                required: true
-                description: Password for user that will be created for droplet
-              groups:
-                type: list
-                required: true
-                description: List of groups that the user will be apart of
-          mounts:
-            type: list
-            elements: dict
-            description: List of dicts that determine what device to mount and where
-            options:
-              mount_point:
-                type: str
-                required: true
-                description: Mount point to mount device
-              device:
-                type: str
-                required: true
-                description: Device to mount
-              fstype:
-                type: str
-                required: true
-                description: File system type to apply to disk
-          docker_composes:
-            type: list
-            elements: dict
-            description: List of docker compose objects
-            options: *base_docker_options_ref
-          docker_containers:
-            type: list
-            elements: dict
-            required: true
-            description: List of docker types to install on droplet
-            options:
-              image:
-                type: str
-                required: true
-                description: Docker container image to install on droplet
-              <<: *base_docker_options_ref
+    options: *droplet_options_ref
+  droplet_preflight:
+    short_description: Droplet preflight
+    options: *droplet_options_ref

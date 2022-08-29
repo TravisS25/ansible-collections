@@ -12,105 +12,85 @@ project_root: &project_root_ref
   required: true
   description: Root project folder to store vagrant info
 
-disk_options: &disk_options_ref
-  name:
-    type: str
-    required: true
-    description: Name of disk
-  size:
-    type: int
-    required: true
-    description: Size of disk in GB
-
-vm_name: &vm_name_ref
-  type: str
-  required: true
-  description: Name of vm which should be unique
-
-content_str: &content_str_ref
-  type: str
+vagrants: &vagrants_ref
+  type: list
+  elements: dict
   required: true
   description: |
-    Inner content to apply vagrant settings to
-    This role will supply the outer config neccessary:
+    List of object settings describing how vagrant will be set up for current droplet
+  options:
+    name:
+      type: str
+      required: true
+      description: Name of vm which should be unique
+    box:
+      type: str
+      required: true
+      description: VM image to use
+    box_version:
+      type: str
+      description: Version of vm image to use
+    disks:
+      type: list
+      elements: dict
+      description: List of disk objects that is used to configure disk settings
+      options:
+        name:
+          type: str
+          required: true
+          description: Name of disk
+        size:
+          type: int
+          required: true
+          description: Size of disk in GB
+    specs:
+      type: dict
+      description: Specs object to set up vm
+      options:
+        memory:
+          type: int
+          description: Memory of vm in MB
+        cpus:
+          type: int
+          description: Number of cpus for vm
 
-    Vagrant.configure("2") do |config|
-    -- Content goes here--
-    end
+install_options: &install_options_ref
+  vm_provider: *vm_provider_ref
+  project_root: *project_root_ref
 
-content_options: &content_options_ref
-  ip:
-    type: str
-    required: true
-    description: IP address of droplet
-  hostname:
-    type: str
-    required: true
-    description: Hostname of machine that will be seen by other machines
-  vagrant_content_list_hostvar:
-    type: str
-    required: true
-    description: |
-      Name of variable that will be set to the "hostvars" variable with 
-      list of vagrant content based on parameters passed
-  vagrant_content_hostvar:
-    type: str
-    required: true
-    description: |
-      Name of variable that will be set to the "hostvars" variable with 
-      string of vagrant content based on parameters passed
-  vagrant:
-    type: dict
-    required: true
-    description: Object describing how vagrant will be set up for current droplet
-    options:
-      name: *vm_name_ref
-      box:
-        type: str
-        required: true
-        description: VM image to use
-      box_version:
-        type: str
-        description: Version of vm image to use
-      disks:
-        type: list
-        elements: dict
-        description: List of disk objects that is used to configure disk settings
-        options: *disk_options_ref
-      specs:
-        type: dict
-        description: Specs object to set up vm
-        options:
-          memory:
-            type: int
-            description: Memory of vm in MB
-          cpus:
-            type: int
-            description: Number of cpus for vm
+run_options: &run_options_ref
+  vm_provider: *vm_provider_ref
+  project_root: *project_root_ref
+  vagrants: *vagrants_ref
+
+main_options: &main_options_ref
+  vm_provider: *vm_provider_ref
+  project_root: *project_root_ref
+  vagrants: *vagrants_ref
 
 argument_specs:
-  setup:
-    short_description: Sets up vagrant environment from installing to running
-    options:
-      <<: *content_options_ref
-      vm_provider: *vm_provider_ref
-      project_root: *project_root_ref
+  main:
+    description: Sets up vagrant environment from installing to running
+    options: *main_options_ref
+
+  main_preflight:
+    description: Main preflight
+    options: *main_options_ref
 
   install:
     short_description: Install vagrant
     description: Install vagrant and related plugins for provider
-    options:
-      vm_provider: *vm_provider_ref
-      project_root: *project_root_ref
+    options: *install_options_ref
 
-  content:
-    short_description: Gets vagrant config content
-    options: *content_options_ref
+  install_preflight:
+    short_description: Install preflight
+    options: *install_options_ref
 
   run:
     short_description: Run vagrant
     description: Run vagrant with given config file content
-    options:
-      vm_provider: *vm_provider_ref
-      project_root: *project_root_ref
-      content: *content_str_ref
+    options: *run_options_ref
+
+  run_preflight:
+    short_description: Run preflight
+    options: *run_options_ref

@@ -13,32 +13,37 @@ argument_specs:
   jasperreports:
     short_description: Docker compose for jasperreports app
     options:
-      password:
-        type: str
-        default: ""
-        description: Password for app
-      allow_empty_password:
-        type: bool
-        default: true
-        description: Determine whether to allow user to not use a password for app
-      services:
+      vars:
         type: dict
         required: true
-        description: Services for jasperreports app
+        description: Generic dict of variables
         options:
-          mariadb:
+          password:
+            type: str
+            default: ""
+            description: Password for app
+          allow_empty_password:
+            type: bool
+            default: true
+            description: Determine whether to allow user to not use a password for app
+          services:
             type: dict
             required: true
-            description: Mariadb object for mariadb app settings
-            options: *base_service_options_ref
-          jasperreports:
-            type: dict
-            required: true
-            description: Jasperreports object for jasperreports app settings
+            description: Services for jasperreports app
             options:
-              <<: *base_service_options_ref
-              ports:
-                type: list
-                default:
-                  - "80:8090"
-                description: List of ports to expose to host
+              mariadb:
+                type: dict
+                required: true
+                description: Mariadb object for mariadb app settings
+                options: *base_service_options_ref
+              jasperreports:
+                type: dict
+                required: true
+                description: Jasperreports object for jasperreports app settings
+                options:
+                  <<: *base_service_options_ref
+                  ports:
+                    type: list
+                    default:
+                      - "80:8090"
+                    description: List of ports to expose to host

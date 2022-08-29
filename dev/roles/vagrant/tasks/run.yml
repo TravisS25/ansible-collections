@@ -3,7 +3,7 @@
   file:
     path: "{{ project_root }}"
     state: directory
-    mode: "0700"
+    mode: 0777
 
 - name: Set vagrant facts
   set_fact:
@@ -14,18 +14,13 @@
     path: "{{ vagrant_file_path }}"
     state: absent
 
-- name: Creating vagrant file
-  file:
-    path: "{{ vagrant_file_path }}"
-    state: touch
-
-- name: Write to vagrant file
-  blockinfile:
-    path: "{{ vagrant_file_path }}"
-    block: |
-      Vagrant.configure("2") do |config|
-        {{ content }}
-      end
+- name: Use template to generate vagrant file
+  template:
+    src: vagrant.j2
+    dest: "{{ vagrant_file_path }}"
+    mode: 0777
+  vars:
+    vagrants: "{{ vagrants }}"
 
 - name: Vagrant up
   command:

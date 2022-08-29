@@ -2,13 +2,13 @@
 - name: Import container action task for alert manager
   import_task: container_action.yaml
   vars:
-    action: "{{ action }}"
-    image: "{{ image }}"
+    action: "{{ vars.action }}"
+    image: "{{ vars.image }}"
     params:
       name: alert_manager
       hostname: alert_manager
       restart_policy: always
       publish_all_ports: yes
       mounts:
-        - source: "{{ storage_path }}"
+        - source: "{{ vars.storage_path }}"
           target: /etc/alertmanager/alertmanager.yml

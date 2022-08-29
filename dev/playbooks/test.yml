@@ -3,93 +3,108 @@
   hosts: localhost
 
   tasks:
-    - name: Make file
-      file:
-        state: touch
-        path: /home/travis/foo/test.txt
-    # - name: Import dns role
-    #   import_role:
-    #     name: traviss25.dev.dns
-    #     tasks_from: corefile
+    - name: Import config vars from file
+      include_vars:
+        name: file_vars
+        file: "{{ import_file }}"
+
+    - name: Assert config is defined
+      assert:
+        that: file_vars.config is defined
+        fail_msg: Config object must be defined
+
+    - name: Set playbook facts
+      set_fact:
+        vagrants: []
+
+    - name: Extract values from droplets
+      loop: "{{ file_vars.config.droplets }}"
+      set_fact:
+        vagrants: "{{ vagrants + [item.vagrant] }}"
+
+    - name: VM provider install preflight
+      include_role:
+        name: traviss25.dev.setup
+        tasks_from: vm_provider_install_preflight
+      vars:
+        vm_provider: "{{ file_vars.config.vm_provider }}"
+
+    - name: Vagrant main prelight
+      import_role:
+        name: traviss25.dev.vagrant
+        tasks_from: main_preflight
+      vars:
+        vm_provider: "{{ file_vars.config.vm_provider }}"
+        project_root: "{{ file_vars.config.project_root }}"
+        vagrants: "{{ vagrants }}"
+
+    - name: Libvirt main preflight
+      when: file_vars.config.vm_provider == 'libvirt'
+      loop: "{{ vagrants }}"
+      include_role:
+        name: traviss25.dev.libvirt
+        tasks_from: main_preflight
+      vars:
+        vm_name: "{{ item.name }}"
+        project_root: "{{ file_vars.config.project_root }}"
+        disks: "{{ item.disks | default([]) }}"
+
+    - name: Droplet preflight
+      loop: "{{ file_vars.config.droplets }}"
+      include_role:
+        name: traviss25.util.setup
+        tasks_from: droplet_preflight
+      vars:
+        droplet: "{{ item }}"
+
+    # - name: CA server preflight
+    #   loop: "{{ file_vars.config.droplets }}"
+    #   when: item.ca is defined and item.ca.server is defined
+    #   include_role:
+    #     name: traviss25.dev.ca
+    #     tasks_from: server_preflight
     #   vars:
-    # file_path: /home/travis/Corefile
-    # records:
-    #   - name: pac-dev.com:1053
-    #     blocks:
-    #       - name: file
-    #         parameters:
-    #           - /etc/coredns/zones/db.pac-dev.com
-    #       - name: auto
-    #         parameters:
-    #           - pac-dev.com
-    #         blocks:
-    #           - name: directory
-    #             parameters:
-    #               - /etc/coredns/zones
-    #           - name: reload
-    #             parameters:
-    #               - 2s
-    #           - name: testblock
-    #             blocks:
-    #               - name: something
-    #                 parameters:
-    #                   - someparameter1
-    #               - name: someelse
-    #                 parameters:
-    #                   - someparameter2
+    #     cert: "{{ item.ca.server.cert | default({}) }}"
+    #     key: "{{ item.ca.server.key | default({}) }}"
 
-    # - name: Debug loop
-    #   debug:
-    #     msg: "{{ vagrant_content }}"
+    # - name: CA client preflight
+    #   loop: "{{ file_vars.config.droplets }}"
+    #   when: item.ca is defined and item.ca.client is defined
+    #   include_role:
+    #     name: traviss25.dev.ca
+    #     tasks_from: client_preflight
+    #   vars:
+    #     ip: "{{ item.ip }}"
+    #     cert: "{{ item.ca.client.cert | default({}) }}"
+    #     key: "{{ item.ca.client.key | default({}) }}"
+    #     subject_alt_names: "{{ item.ca.client.subject_alt_names }}"
+    #     ca_server:
+    #       ip: "{{ item.ca.client.ca_server.ip }}"
 
-    # - name: Set dev facts
-    #   set_fact:
-    #     ansible_root_dir: "{{ lookup('env', 'ANSIBLE_ROOT') }}"
+    # - name: SSH passkey preflight
+    #   loop: "{{ file_vars.config.droplets }}"
+    #   include_role:
+    #     name: traviss25.util.ssh
+    #     tasks_from: pass_key_preflight
+    #   vars:
+    #     ip: "{{ item.ip }}"
+    #     username: "{{ item.user_creds.username }}"
+    #     password: "{{ item.user_creds.password }}"
 
-    # - name: Import vars from file
-    #   include_vars:
-    #     file: "{{ import_file }}"
-    #     name: file_vars
+    # - name: Docker container preflight
+    #   loop: "{{ file_vars.config.droplets | subelements('docker_containers') }}"
+    #   when: item.1.from_collection is defined and item.1.from_collection == true
+    #   include_role:
+    #     name: traviss25.docker.docker_container_collection
+    #     tasks_from: "{{ item.1.name }}_preflight"
+    #   vars:
+    #     vars: "{{ item.1.vars }}"
 
-    # - name: Import droplet argument specs
-    #   include_vars:
-    #     name: droplet_arg_specs
-    #     file: "{{ all_defaults.base_ansible_install_path }}/traviss25/util/roles/setup/meta/argument_specs.yaml"
-
-    # - name: Import vagrant argument specs
-    #   include_vars:
-    #     name: vagrant_arg_specs
-    #     file: "{{ all_defaults.base_ansible_install_path }}/traviss25/dev/roles/setup/meta/argument_specs.yaml"
-
-    # - name: Import ssh argument specs
-    #   include_vars:
-    #     name: ssh_arg_specs
-    #     file: "{{ all_defaults.base_ansible_install_path }}/traviss25/util/roles/ssh/meta/argument_specs.yaml"
-
-    # - name: Import host file argument specs
-    #   include_vars:
-    #     name: host_file_arg_specs
-    #     file: "{{ all_defaults.base_ansible_install_path }}/traviss25/dev/roles/system_util/meta/argument_specs.yaml"
-
-    # - name: Import dev setup
-    #   include_vars:
-    #     name: setup_test_arg_specs
-    #     file: "{{ all_defaults.base_ansible_install_path }}/traviss25/dev/roles/setup/meta/argument_specs.yaml"
-
-    # - name: Display stuff here
-    #   debug:
-    #     msg: "{{ setup_test_arg_specs['argument_specs']['test']['options'] }}"
-
-    # - name: Testing argument spec
-    #   validate_argument_spec:
-    #     argument_spec: "{{ setup_test_arg_specs['argument_specs']['test']['options'] }}"
-    #     provided_arguments:
-    #       vm_provider: invalid
-
-    # - name: Verify droplets setup
-    #   loop: "{{ file_vars.droplets }}"
-    #   validate_argument_spec:
-    #     argument_spec: "{{ droplet_arg_specs['argument_specs']['droplet']['options'] }}"
-    #     provided_arguments:
-    #       droplet: "{{ item }}"
-    #       default_docker_container: "{{ all_defaults.docker_container }}"
+    # - name: Docker compose preflight
+    #   loop: "{{ file_vars.config.droplets | subelements('docker_composes') }}"
+    #   when: item.1.from_collection is defined and item.1.from_collection == true
+    #   include_role:
+    #     name: traviss25.docker.docker_compose_collection
+    #     tasks_from: "{{ item.1.name }}_preflight"
+    #   vars:
+    #     vars: "{{ item.1.vars }}"

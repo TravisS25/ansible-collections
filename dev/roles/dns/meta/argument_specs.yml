@@ -1,45 +1,65 @@
 ---
-state: &state_ref:
-  type: str
-  choices:
-    - create
-    - append
-    - delete
-  default: create
-  description: Determines the state of file
-
-zone_options: &zone_options_ref
+host_file_options: &host_file_options_ref
+  file_state:
+    type: str
+    choices:
+      - create
+      - append
+      - update
+      - delete
+    default: create
+    description: Determines the state of file
   root_dir:
     type: str
-    default: /etc/coredns/zones
-    description: Root dir of zone files for Corefile
-  domain_name:
+    default: /etc/coredns/hosts
+    description: Root dir of host files
+  host_file:
     type: str
     required: true
     description: |
-      Name of domain that a zone will be created after and will be used as
-      apart of the "$ORIGIN" variable in zone file
-      The file name will be prefixed with "db."
-  file_state: *state_ref
-  zone_settings:
-    type: dict
-    description: Settings to be used in zone file
+      Name of host format file.  
+      Convention should be to name after domain eg. example.com
+  records:
+    type: list
+    elements: dict
+    required: true
     options:
-      soa:
-        type: dict
+      ip:
+        type: str
         required: true
-        description: SOA settings of zone file
+        description: IP address of host
+      hostname:
+        type: str
+        required: true
+        description: Host name for ip
+      change_to_ip:
+        type: str
+        description: |
+          Required when file_state is "update", will search file for "ip" and
+          replace with this value
+      change_to_hostname:
+        type: str
+        description: |
+          Required when file_state is "update", will search file for "host" and
+          replace with this value
 
 corefile_options: &corefile_options_ref
   root_dir:
     type: str
     default: /etc/coredns
-    description: Root dir of coredns files
-  state: *state_ref
+    description: Root dir of coredns file
+  file_state:
+    type: str
+    choices:
+      - create
+      - append
+      - delete
+    default: create
+    description: Determines the state of file
   records:
     type: list
     elements: dict
-    description: Settings for Corefile if state is not "delete"
+    description: Settings for Corefile if file_state is not "delete"
     options:
       name:
         type: str
@@ -61,18 +81,66 @@ corefile_options: &corefile_options_ref
             elements: dict
             description: Recursive list of this dict
 
+install_options: &install_options_ref
+  coredns_version:
+    type: str
+    default: 1.9.3
+    description: Version of coredns to download
+
+main_options: &main_options_ref
+  server:
+    type: dict
+    description: Sets up dns server on current droplet
+    options:
+      <<: *install_options_ref
+      corefile:
+        type: dict
+        required: true
+        description: Object settings for corefile
+        options: *corefile_options_ref
+      hosts:
+        type: list
+        elements: dict
+        description: List of host object settings to generate host files
+        options: *host_file_options_ref
+  client:
+    type: dict
+    description: Sets up droplet to connect to dns server
+    options:
+      dns_server:
+        type: dict
+        required: true
+        description: DNS server settings for current droplet
+        options:
+          ip:
+            type: str
+            required: true
+            description: IP address of DNS server
+
 argument_specs:
+  main:
+    description: Main entry into installing and running coredns
+    options: *main_options_ref
+
+  main_preflight:
+    short_description: Main prelight
+    options: *main_options_ref
+
   install:
     description: Install requirements for dns server
-    options:
-      coredns_version:
-        type: str
-        default: 1.9.3
-        description: Version of coredns to download
+    options: *install_options_ref
 
-  zone:
-    description: Creates zone file(s) for Corefile to use
-    options:
+  install_preflight:
+    short_description: Install preflight
+    options: *install_options_ref
+
+  host_file:
+    description: Creates host format file for Corefile to use
+    options: *host_file_options_ref
+
+  host_file_preflight:
+    description: Asserts host file parameters
+    options: *host_file_options_ref
 
   corefile:
     description: Creates corefile config file
