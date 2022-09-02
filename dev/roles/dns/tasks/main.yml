@@ -25,4 +25,6 @@
 
 - name: DNS client block
   when: client is defined
-  block:
+  include_task: client
+  vars:
+    dns_server: "{{ client.dns_server }}"

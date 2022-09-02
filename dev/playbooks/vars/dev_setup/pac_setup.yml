@@ -237,6 +237,7 @@ config:
           subject_alt_names:
             - "DNS:minio2.pac-dev.com"
             - "DNS:pac-server2.pac-dev.com"
+      dns: *dns_client_ref
       vagrant:
         name: *pac_server2_hostname_ref
         box: *vm_box_image_ref
@@ -257,6 +258,7 @@ config:
           subject_alt_names:
             - "DNS:minio3.pac-dev.com"
             - "DNS:pac-server3.pac-dev.com"
+      dns: *dns_client_ref
       vagrant:
         name: *pac_server3_hostname_ref
         box: *vm_box_image_ref
@@ -277,6 +279,7 @@ config:
           subject_alt_names:
             - "DNS:minio4.pac-dev.com"
             - "DNS:pac-server4.pac-dev.com"
+      dns: *dns_client_ref
       vagrant:
         name: *pac_server4_hostname_ref
         box: *vm_box_image_ref

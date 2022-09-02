@@ -1,0 +1,15 @@
+---
+- name: Remote Host
+  hosts: single_server
+  become: true
+  remote_user: vagrant
+
+  tasks:
+    - name: Import client dns role
+      become: true
+      import_role:
+        name: traviss25.dev.dns
+        tasks_from: client
+      vars:
+        dns_server:
+          ip: 192.168.2.5

@@ -1,2 +1,22 @@
 ---
-- name:
+- name: Set dns client facts
+  set_fact:
+    netplan_cfg_file_path: /etc/netplan/01-netcfg.yaml
+
+- name: Remove current netplan config
+  file:
+    path: "{{ netplan_cfg_file_path }}"
+    state: absent
+
+- name: Create new netplan config from template
+  template:
+    src: netplan.j2
+    dest: "{{ netplan_cfg_file_path }}"
+    mode: 0777
+  vars:
+    dns_server: "{{ dns_server }}"
+
+- name: Apply config changes
+  shell: netplan apply
+
+

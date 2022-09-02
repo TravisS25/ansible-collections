@@ -21,16 +21,13 @@
     ca_server:
       ip: "{{ droplet.ca.client.ca_server.ip }}"
 
-- name: DNS server preflight
-  when: droplet.dns is defined and droplet.dns.server is defined
+- name: DNS preflight
   include_role:
     name: traviss25.dev.dns
     tasks_from: main
   vars:
-    server:
-      coredns_version: "{{ droplet.dns.coredns_version }}"
-      corefile:
-        records: "{{ droplet.dns.records }}"
+    server: "{{ droplet.dns.server | default(omit) }}"
+    client: "{{ droplet.dns.client | default(omit) }}"
 
 - name: SSH passkey preflight
   include_role:
