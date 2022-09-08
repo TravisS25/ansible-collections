@@ -1,0 +1,7 @@
+---
+- name: Import terraform task
+  import_tasks: main.yml
+  vars:
+    state: "{{ state }}"
+    workspace: planned
+    

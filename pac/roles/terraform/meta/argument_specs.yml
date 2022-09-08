@@ -1,0 +1,78 @@
+---
+main_options: &main_options_ref
+  state:
+    type: str
+    default: present
+    description: State of terraform
+    choices:
+      - planned
+      - present
+      - absent
+  workspace:
+    type: str
+    default: local
+    description: Terraform workspace to use
+    choices:
+      - local
+      - dev
+      - prod
+  targets:
+    type: list
+    elements: str
+    description: Target resources by name to /create/update/destroy
+  variables:
+    type: dict
+    required: true
+    description: Variables to use for terraform
+    options:
+      droplets:
+        type: list
+        elements: dict
+        description: List of droplet settings
+        options:
+          ip:
+            type: str
+            required: true
+            description: IP of droplet
+          hostname:
+            type: str
+            required: true
+            description: Hostname of droplet
+          disks:
+            type: list
+            elements: dict
+            required: true
+            description: List of disk settings
+            options:
+              name:
+                type: str
+                description: Name of disk
+              path:
+                type: str
+                description: Path to disk
+              size:
+                type: int
+                description: Size of disk in GBs
+          spec:
+            type: dict
+            description: Specs for container
+            options:
+              cpus:
+                type: int
+                required: true
+                description: Number of cpus to allocate to container
+              memory:
+                type: int
+                required: true
+                description: Memory in MiB to allocate for container
+
+
+argument_specs:
+  main:
+    description: Main entry into setting up terraform
+    options: *main_options_ref
+  main_preflight:
+    description: Preflight for main
+    options: *main_options_ref
+      
+        

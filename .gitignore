@@ -1,3 +1,4 @@
 .vscode
 *.gz
 pac/config.yaml
+.terraform

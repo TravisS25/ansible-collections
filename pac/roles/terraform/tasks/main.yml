@@ -1,0 +1,13 @@
+---
+- name: Set terraform facts
+  set_fact:
+    terraform_root_path: "{% if workspace == 'local'%}../files/local{% else %}../files/remote{% endif %}"
+
+- name: Deploy terraform
+  terraform:
+    provider_upgrade: true
+    project_path: "{{ terraform_root_path }}"
+    state: "{{ state | default(main_defaults.state) }}"
+    workspace: "{{ workspace | default(main_defaults.workspace) }}"
+    variables: "{{ variables }}"
+
