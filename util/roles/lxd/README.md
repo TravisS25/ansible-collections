@@ -1,12 +1,12 @@
-Terraform
+Role Name
 =========
 
-Controls terraform for local, dev and prod environments of pac
+A brief description of the role goes here.
 
 Requirements
 ------------
 
-The TF_VAR_pac_tfstate_file environment variable must be set which should be an absolute path that points to current user's tfstate.json file for local environment
+Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
 
 Role Variables
 --------------

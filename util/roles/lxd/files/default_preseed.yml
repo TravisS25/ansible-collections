@@ -1,0 +1,14 @@
+# Storage pools
+storage_pools:
+- name: lxd-data
+  driver: btrfs
+  config:
+    source: "/var/snap/lxd/common/lxd/disks/lxd-data.img"
+
+# Network devices
+networks:
+- name: lxd-network
+  type: bridge
+  config:
+    ipv4.address: auto
+    ipv6.address: none

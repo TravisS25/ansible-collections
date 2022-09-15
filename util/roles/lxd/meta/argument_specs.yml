@@ -1,0 +1,13 @@
+---
+
+argument_specs:
+  main:
+    description: |
+      Main entry into setting up lxd.  
+      User running this role must have sudo privileges
+    options:
+      preseed_file:
+        type: str
+        description: |
+          Absolute path to YAML config file to use to preseed lxd setup.
+          If not set, will use default settings

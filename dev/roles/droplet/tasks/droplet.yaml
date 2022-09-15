@@ -1,0 +1,62 @@
+---
+# - name: Update hostname
+#   hostname:
+#     name: "{{ droplet.hostname }}"
+
+# - name: Create user
+#   when: droplet.user_creds
+#   import_role:
+#     name: user
+#     tasks_from: create
+#   vars:
+#     username: "{{ droplet.user_creds.username }}"
+#     password: "{{ droplet.user_creds.password }}"
+#     groups: "{{ droplet.user_creds.groups }}"
+
+# - name: Create filesystem and mount
+#   loop: "{{ droplet.mounts | default([]) }}"
+#   ansible.posix.mount:
+#     path: "{{ item.mount_point }}"
+#     src: "{{ item.device }}"
+#     fstype: "{{ item.fstype }}"
+#     state: mounted
+
+- name: Import docker install role
+  import_role:
+    name: traviss25.docker.docker
+    tasks_from: install
+  vars:
+    username: "{{ droplet.user_creds.username }}"
+
+- name: Import docker role images(s)
+  loop: "{{ droplet.docker_containers }}"
+  include_role:
+    name: traviss25.docker.docker
+    tasks_from: image_pull
+  vars:
+    image: "{{ item.image }}"
+
+- name: Import docker container task
+  loop: "{{ droplet.docker_containers }}"
+  include_role:
+    name: traviss25.docker.docker
+    tasks_from: container.yaml
+  vars:
+    name: "{{ item.name }}"
+    from_collection: "{{ item.from_collection }}"
+    image: "{{ item.image }}"
+    action: "{{ item.action }}"
+    vars: "{{ item.vars }}"
+    params: "{{ item.params }}"
+
+- name: Import docker compose task
+  loop: "{{ droplet.docker_composes | default([]) }}"
+  include_role:
+    name: traviss25.docker.docker
+    tasks_from: compose_service.yaml
+  vars:
+    name: "{{ item.name }}"
+    from_collection: "{{ item.from_collection }}"
+    action: "{{ item.action }}"
+    vars: "{{ item.vars }}"
+    params: "{{ item.params }}"

@@ -1,0 +1,46 @@
+---
+- name: Foo
+  hosts: localhost
+
+  tasks:
+    - name: Import config vars from file
+      include_vars:
+        name: file_vars
+        file: "{{ import_file }}"
+
+    - name: Set deploy facts
+      set_fact:
+        terraform_droplets: []
+
+    - name: Loop through droplets
+      loop: "{{ file_vars.config.droplets }}"
+      vars:
+        terraform_droplet:
+          hostname: "{{ item.hostname }}"
+          cloud_init: "{{ item.cloud_init }}"
+          specs:
+            cpus: "{{ item.specs.cpus }}"
+            memory: "{{ item.specs.memory }}"
+            disks: "{{ item.specs.disks | default([{'name': '', 'path': '', 'size': 0}]) }}"
+      set_fact:
+        terraform_droplets: "{{ terraform_droplets + [terraform_droplet] }}"
+
+    - name: Set terraform facts
+      set_fact:
+        tf_local_vars:
+          terraform: "{{ file_vars.config.terraform | default({}) }}"
+          droplets: "{{ terraform_droplets }}"
+
+    - name: Import terraform preflight
+      import_role:
+        name: traviss25.pac.terraform
+        tasks_from: main_preflight
+      vars:
+        local_vars: "{{ tf_local_vars }}"
+
+    - name: Run terraform
+      import_role:
+        name: traviss25.pac.terraform
+        tasks_from: main
+      vars:
+        local_vars: "{{ tf_local_vars }}"

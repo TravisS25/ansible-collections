@@ -19,7 +19,7 @@
   template:
     src: corefile.j2
     dest: "{{ corefile }}"
-    mode: 0777
+    mode: 0600
   vars:
     server_blocks: "{{ records }}"
 
@@ -36,7 +36,7 @@
         path: "{{ root_dir }}/tmp"
       register: tmp_dir
 
-    - name: Set append corefile facts
+    - name: Set temp file facts
       set_fact:
         tmp_file_path: "{{ (tmp_dir.path, tmp_file_name) | path_join }}"
 
@@ -44,7 +44,7 @@
       template:
         src: corefile.j2
         dest: "{{ tmp_file_path }}"
-        mode: 0777
+        mode: 0600
 
     - name: Append to core file
       shell: "cat {{ tmp_corefile.path }} >> {{ corefile }}"

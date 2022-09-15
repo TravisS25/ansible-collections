@@ -1,18 +1,21 @@
 variable droplets {
     type        = list(
         object({
-            ip              = string
             hostname        = string
-            disks           = list(
-                object({
-                    path    = string
-                    name    = string
-                    size    = number
-                })
-            )
-            spec            = object({
+            cloud_init      = object({
+                network_config_file  = string
+                user_data_file       = string
+            })
+            specs            = object({
                 cpus    = number
                 memory  = number
+                disks           = list(
+                    object({
+                        path    = string
+                        name    = string
+                        size    = number
+                    })
+                )
             })
         })
     )
@@ -21,7 +24,7 @@ variable droplets {
 
     validation {
         condition = alltrue([
-            for droplet in var.droplets : droplet.spec.cpus > 0 && droplet.spec.memory > 0
+            for droplet in var.droplets : droplet.specs.cpus > 0 && droplet.specs.memory > 0
         ])
         error_message = "Cpus and memory must be postive numbers"
     }
@@ -33,27 +36,29 @@ variable storage_pool {
         source  = string
         size    = number
         driver  = string
+        fstype  = string
     })
     description = "Storage pool settings to store an external drives"
     default = {
         name    = "pac"
         source  = "/var/snap/lxd/common/lxd/disks/pac.img"
         size    = 20
-        driver  = "zfs"
+        driver  = "lvm"
+        fstype  = "xfs"
     }
 
-     validation {
+    validation {
         condition       = var.storage_pool.size > 0
         error_message   = "Pool size must be positive number"
     }
 
-     validation {
-        condition       = contains(["dir", "lvm", "btrfs", "zfs"], var.storage_pool.driver)
-        error_message   = "Invalid driver type"
+    validation {
+        condition       = contains(["btrfs", "ext4", "xfs"], var.storage_pool.fstype)
+        error_message   = "Pool fstype must be btrfs, ext4, xfs"
     }
 }
 
-variable pac_network {
+variable network {
     type = object({
         name         = string
         ipv4_cidr    = string

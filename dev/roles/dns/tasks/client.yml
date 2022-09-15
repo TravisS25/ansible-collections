@@ -12,7 +12,7 @@
   template:
     src: netplan.j2
     dest: "{{ netplan_cfg_file_path }}"
-    mode: 0777
+    mode: 0600
   vars:
     dns_server: "{{ dns_server }}"
 

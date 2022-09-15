@@ -1,13 +1,135 @@
 ---
 - name: Set terraform facts
   set_fact:
-    terraform_root_path: "{% if workspace == 'local'%}../files/local{% else %}../files/remote{% endif %}"
+    converted_droplets: []
+    tf_backend_config: {}
+    tf_root_path: ''
+    tf_current_state_file: ''
+    tf_variable_files: []
+    tf_tmp_tfvars_file: "/tmp/tmp_pac_terraform.tfvars"
+    tf_targets: "{{ targets | default([]) }}"
+    tf_workspace: "{{ workspace | default(main_defaults.workspace) }}"
+    tf_state: "{{ state | default(main_defaults.state) }}"
+    pac_tf_state_file: "{{ lookup('env', 'PAC_TF_STATE_FILE') }}"
+    pac_tf_workspace_dir: "{{ lookup('env', 'PAC_TF_WORKSPACE_DIR') }}"
+    pac_tf_plan_file: "/tmp/pac_terraform.tfplan"
+    tmp_network_config_file: /tmp/terraform_network_config
+    tmp_user_data_file: /tmp/terraform_user_data
 
-- name: Deploy terraform
-  terraform:
-    provider_upgrade: true
-    project_path: "{{ terraform_root_path }}"
-    state: "{{ state | default(main_defaults.state) }}"
-    workspace: "{{ workspace | default(main_defaults.workspace) }}"
-    variables: "{{ variables }}"
+- name: Convert droplets for terraform
+  loop: "{{ local_vars.droplets }}"
+  vars:
+    new_droplet:
+      hostname: "{{ item.hostname }}"
+      specs: "{{ item.specs }}"
+      cloud_init:
+        user_data_yaml: "{{ item.cloud_init.user_data }}"
+        user_data_file: "{{ tmp_user_data_file }}_{{ item.hostname }}.yml"
+        network_config_yaml: "{{ item.cloud_init.user_data }}"
+        network_config_file: "{{ tmp_network_config_file }}_{{ item.hostname }}.yml"
+  set_fact:
+    converted_droplets: "{{ converted_droplets + [new_droplet] }}"
 
+# - name: Write temp files for user data
+#   loop: "{{ converted_droplets }}"
+#   blockinfile:
+#     create: true
+#     path: "{{ item.cloud_init.user_data_file }}"
+#     block: |
+#       #cloud-config
+
+#       {{ item.cloud_init.user_data_yaml | to_nice_yaml(width=50, explicit_start=True, explicit_end=True) }}
+
+# - name: Write temp files for network config
+#   loop: "{{ converted_droplets }}"
+#   blockinfile:
+#     create: true
+#     path: "{{ item.cloud_init.network_config_file }}"
+#     block: |
+#       {{ item.cloud_init.network_config_yaml | to_nice_yaml(width=50, explicit_start=True, explicit_end=True) }}
+
+- name: Local workspace block
+  when: tf_workspace == 'local'
+  block:
+    - name: Set local workspace facts
+      set_fact:
+        tf_variable_files: "{{ tf_variable_files + [tf_tmp_tfvars_file] }}"
+        tf_root_path: "{{ role_path }}/files/local"
+        tf_backend_config:
+          path: "{{ pac_tf_state_file }}"
+          workspace_dir: "{{ pac_tf_workspace_dir }}"
+
+    - name: Create tfvars file from template
+      template:
+        src: local_tfvars.j2
+        dest: "{{ tf_tmp_tfvars_file }}"
+        mode: 0600
+      vars:
+        droplets: "{{ converted_droplets }}"
+        terraform: "{{ local_vars.terraform }}"
+
+    - name: Planning state block
+      when: tf_state == 'planned'
+      block:
+        - name: Grab backend config state file stats
+          stat:
+            path: "{{ pac_tf_state_file }}"
+          register: register_state_file
+
+        - name: Set init state file
+          when: not register_state_file.stat.exists
+          set_fact:
+            tf_current_state_file: "{{ role_path }}/files/local/.terraform/terraform.tfstate"
+
+        - name: Set backend config state file
+          when: register_state_file.stat.exists
+          set_fact:
+            tf_current_state_file: "{{ pac_tf_state_file }}"
+
+- name: Terraform block
+  block:
+    - name: Plan terraform
+      when: tf_state == 'planned'
+      terraform:
+        backend_config: "{{ tf_backend_config }}"
+        provider_upgrade: true
+        force_init: true
+        init_reconfigure: true
+        plan_file: "{{ pac_tf_plan_file }}"
+        targets: "{{ tf_targets }}"
+        project_path: "{{ tf_root_path }}"
+        state: "{{ tf_state }}"
+        workspace: "{{ tf_workspace }}"
+        variables_files: "{{ tf_variable_files }}"
+    - name: Apply terraform
+      when: tf_state == 'present'
+      terraform:
+        backend_config: "{{ tf_backend_config }}"
+        provider_upgrade: true
+        targets: "{{ tf_targets }}"
+        project_path: "{{ tf_root_path }}"
+        state: "{{ tf_state }}"
+        workspace: "{{ tf_workspace }}"
+        variables_files: "{{ tf_variable_files }}"
+  # always:
+  #   - name: Remove tmp tfvars file if exists
+  #     file:
+  #       path: "{{ tf_tmp_tfvars_file }}"
+  #       state: absent
+    
+  #   - name: Remove plan file if exists
+  #     file:
+  #       path: "{{ pac_tf_plan_file }}"
+  #       state: absent
+
+  #   - name: Remove user data files
+  #     loop: "{{ converted_droplets }}"
+  #     file:
+  #       path: "{{ item.cloud_init.user_data_file }}"
+  #       state: absent
+
+  #   - name: Remove network config files
+  #     loop: "{{ converted_droplets }}"
+  #     file:
+  #       path: "{{ item.cloud_init.network_config_file }}"
+  #       state: absent

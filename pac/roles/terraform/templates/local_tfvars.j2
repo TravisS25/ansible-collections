@@ -1,0 +1,41 @@
+droplets = [
+    {% for droplet in droplets -%}
+    {
+        hostname    = "{{ droplet.hostname }}"
+        cloud_init  = {
+            user_data_file       = "{{ droplet.cloud_init.user_data_file }}"
+            network_config_file  = "{{ droplet.cloud_init.network_config_file }}"
+        }
+        specs   = {
+            cpus    = {{ droplet.specs.cpus }}
+            memory  = {{ droplet.specs.memory }}
+            disks   = [
+                {% for disk in droplet.specs.disks -%}
+                {
+                    path    = "{{ disk.path }}"
+                    name    = "{{ disk.name }}"
+                    size    = {{ disk.size }}
+                },
+                {% endfor %}
+            ]
+        }
+    },
+    {%- endfor %}
+]
+
+{% if 'storage_pool' in terraform %}
+storage_pool = {
+    name    = {{ terraform.storage_pool.name }}
+    source  = {{ terraform.storage_pool.source }}
+    size    = {{ terraform.storage_pool.size }}
+    driver  = {{ terraform.storage_pool.driver }}
+    fstype  = {{ terraform.storage_pool.fstype }}
+}
+{% endif %}
+
+{% if 'network' in terraform %}
+network = {
+    name        = "{{ terraform.network.name }}",
+    ipv4_cidr   = "{{ terraform.network.ipv4_cidr }}"
+}
+{% endif %}

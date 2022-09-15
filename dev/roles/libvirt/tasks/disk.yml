@@ -11,7 +11,7 @@
   file:
     path: "{{ disk_img_dir }}"
     state: directory
-    mode: "0700"
+    mode: "0600"
 
 - name: Create/attach disk for libvirt
   shell: |

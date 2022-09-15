@@ -55,7 +55,7 @@
       file:
         path: "{{ pb_vagrant_project_dir }}"
         state: directory
-        mode: '0700'
+        mode: '0600'
       when: pb_run_type == 'local'
     - name: Delete vagrant file if exists
       file:

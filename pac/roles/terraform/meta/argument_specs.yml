@@ -1,4 +1,6 @@
 ---
+
+
 main_options: &main_options_ref
   state:
     type: str
@@ -20,40 +22,102 @@ main_options: &main_options_ref
     type: list
     elements: str
     description: Target resources by name to /create/update/destroy
-  variables:
+  local_vars:
     type: dict
-    required: true
-    description: Variables to use for terraform
+    description: Variables to use for local terraform setup
     options:
+      terraform:
+        type: dict
+        required: true
+        description: Terraform settings for build
+        options:
+          network:
+            type: dict
+            description: Network settings for pac lxd
+            options:
+              name:
+                type: str
+                required: true
+                description: Name of lxd network
+              ipv4_cidr:
+                type: str
+                required: true
+                description: Network cidr to create
+          storage_pool:
+            type: dict
+            description: Storage pool settings for pac lxd
+            options:
+              name:
+                type: str
+                required: true
+                description: Name of storage pool
+              source:
+                type: str
+                required: true
+                description: Absolute file path where storage pool will be stored
+              size:
+                type: int
+                required: true
+                description: Size in GB for storage pool
+              driver:
+                type: str
+                required: true
+                description: Storage pool driver
+                choices:
+                  - dir
+                  - lvm
+                  - btrfs
+                  - zfs
+              fstype:
+                type: str
+                required: true
+                description: Filesystem for disk and all volumes created with it
+                choices:
+                  - btrfs
+                  - ext4
+                  - xfs
       droplets:
         type: list
         elements: dict
+        required: true
         description: List of droplet settings
         options:
-          ip:
-            type: str
-            required: true
-            description: IP of droplet
           hostname:
             type: str
             required: true
             description: Hostname of droplet
-          disks:
-            type: list
-            elements: dict
+          cloud_init:
+            type: dict
             required: true
-            description: List of disk settings
+            description: Cloud init settings
             options:
-              name:
-                type: str
-                description: Name of disk
-              path:
-                type: str
-                description: Path to disk
-              size:
-                type: int
-                description: Size of disk in GBs
-          spec:
+              user_data:
+                type: dict
+                required: true
+                description: User data settings for cloud init
+              network_config:
+                type: dict
+                required: true
+                description: Network settings for cloud init
+                options:
+                  network:
+                    type: dict
+                    required: true
+                    description: Top level network settings
+                    options:
+                      version: 
+                        type: int
+                        required: true
+                        choices:
+                          - 1
+                          - 2
+                        description: Which version of network config to use
+                      config:
+                        type: list
+                        elements: dict
+                        required: true
+                        description: Config settings for network
+          specs:
             type: dict
             description: Specs for container
             options:
@@ -65,12 +129,29 @@ main_options: &main_options_ref
                 type: int
                 required: true
                 description: Memory in MiB to allocate for container
-
+              disks:
+                type: list
+                elements: dict
+                description: List of disk settings
+                options:
+                  name:
+                    type: str
+                    required: true
+                    description: Name of disk
+                  path:
+                    type: str
+                    required: true
+                    description: Path to disk
+                  size:
+                    type: int
+                    required: true
+                    description: Size of disk in GBs
 
 argument_specs:
   main:
     description: Main entry into setting up terraform
     options: *main_options_ref
+  
   main_preflight:
     description: Preflight for main
     options: *main_options_ref

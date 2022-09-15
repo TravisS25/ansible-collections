@@ -50,5 +50,5 @@
   copy:
     dest: "{{ client_cert_full_path }}"
     content: "{{ certificate.certificate }}"
-  delegate_to: "{{ ip }}"
+  #delegate_to: "{{ ip }}"
   run_once: true
