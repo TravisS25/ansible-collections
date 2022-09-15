@@ -1,6 +1,5 @@
 ---
 
-
 main_options: &main_options_ref
   state:
     type: str
@@ -82,6 +81,10 @@ main_options: &main_options_ref
         required: true
         description: List of droplet settings
         options:
+          ip:
+            type: str
+            required: true
+            description: IP of droplet
           hostname:
             type: str
             required: true

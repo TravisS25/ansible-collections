@@ -16,6 +16,7 @@
       loop: "{{ file_vars.config.droplets }}"
       vars:
         terraform_droplet:
+          ip: "{{ item.ip }}"
           hostname: "{{ item.hostname }}"
           cloud_init: "{{ item.cloud_init }}"
           specs:

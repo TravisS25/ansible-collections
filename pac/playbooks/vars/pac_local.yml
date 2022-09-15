@@ -115,8 +115,9 @@ dns_client: &dns_client_ref
 user_data: &user_data_ref
   users:
     - name: pac-user
-      groups:
-        - sudo
+      primary_group: pac-user
+      groups: sudo
+      shell: /bin/bash
 
 nameserver: &nameserver_ref
   type: nameserver
@@ -131,13 +132,31 @@ network_version: &network_version_ref 1
 subnet_type: &subnet_type_ref static
 subnet_netmask: &subnet_netmask_ref 255.255.255.0
 
+cloud_init: &cloud_init_ref
+  user_data:
+    users:
+      - name: pac-user
+        primary_group: pac-user
+        groups: sudo
+        shell: /bin/bash
+  network_config:
+    network:
+      version: 1
+      config:
+        - type: nameserver
+          address:
+            - 192.168.3.3
+            - 8.8.8.8
+
 config:
   vm_provider: libvirt
   project_root: ~/.vagrant_projects/pac/libvirt
   terraform: {}
     
   droplets:
-    - hostname: *ca_server_hostname_ref
+    - ip: *ca_server_ip_ref
+      hostname: *ca_server_hostname_ref
+      #cloud_init: *cloud_init_ref
       cloud_init:
         user_data: *user_data_ref
         network_config:
@@ -150,32 +169,34 @@ config:
                   - type: *subnet_type_ref
                     address: *ca_server_ip_ref
                     netmask: *subnet_netmask_ref
-                    gateway: *gateway_ref
+                    # gateway: *gateway_ref
               - *nameserver_ref
-            # - type: nameserver
-            #   address:
-            #     - 192.168.3.3
-            #     - 8.8.8.8
+              # - type: nameserver
+              #   address:
+              #     - 192.168.3.3
+              #     - 8.8.8.8
       specs: *specs_ref
       ca:
         server: {}
       docker_containers:
         - name: busybox
           image: busybox:1.35.0
-    # - hostname: *dns_server_hostname_ref
-    #   cloud_init:
-    #     user_data: *user_data_ref
-    #     network_config:
-    #       version: *network_version_ref
-    #       config:
-    #         - type: *network_type_ref
-    #           name: *network_name_ref
-    #           subnets:
-    #             - type: *subnet_type_ref
-    #               address: *dns_server_ip_ref
-    #               netmask: *subnet_netmask_ref
-    #               gateway: *gateway_ref
-    #         - *nameserver_ref
+    # - ip: *dns_server_ip_ref
+    #   hostname: *dns_server_hostname_ref
+    #   cloud_init: *cloud_init_ref
+    #     # user_data: *user_data_ref
+    #     # network_config:
+    #     #   network:
+    #     #     version: *network_version_ref
+    #     #     config:
+    #     #       - type: *network_type_ref
+    #     #         name: *network_name_ref
+    #     #         subnets:
+    #     #           - type: *subnet_type_ref
+    #     #             address: *dns_server_ip_ref
+    #     #             netmask: *subnet_netmask_ref
+    #     #             gateway: *gateway_ref
+    #     #       - *nameserver_ref
     #   specs: *specs_ref
     #   dns:
     #     server:
@@ -226,20 +247,22 @@ config:
     #   docker_containers:
     #     - name: busybox
     #       image: busybox:1.35.0
-    # - hostname: *pac_server1_hostname_ref
-    #   cloud_init:
-    #     user_data: *user_data_ref
-    #     network_config:
-    #       version: *network_version_ref
-    #       config:
-    #         - type: *network_type_ref
-    #           name: *network_name_ref
-    #           subnets:
-    #             - type: *subnet_type_ref
-    #               address: *pac_server1_ip_ref
-    #               netmask: *subnet_netmask_ref
-    #               gateway: *gateway_ref
-    #         - *nameserver_ref
+    # - ip: *pac_server1_ip_ref
+    #   hostname: *pac_server1_hostname_ref
+    #   cloud_init: *cloud_init_ref
+    #     # user_data: *user_data_ref
+    #     # network_config:
+    #     #   network:
+    #     #     version: *network_version_ref
+    #     #     config:
+    #     #       - type: *network_type_ref
+    #     #         name: *network_name_ref
+    #     #         subnets:
+    #     #           - type: *subnet_type_ref
+    #     #             address: *pac_server1_ip_ref
+    #     #             netmask: *subnet_netmask_ref
+    #     #             gateway: *gateway_ref
+    #     #       - *nameserver_ref
     #   specs: *minio_server_specs_ref
     #   ca:
     #     client:
@@ -267,20 +290,22 @@ config:
     #     - *grafana_docker_ref
     #     - *prometheus_docker_ref
     #     - *minio_docker_ref
-    # - hostname: *pac_server2_hostname_ref
-    #   cloud_init:
-    #     user_data: *user_data_ref
-    #     network_config:
-    #       version: *network_version_ref
-    #       config:
-    #         - type: *network_type_ref
-    #           name: *network_name_ref
-    #           subnets:
-    #             - type: *subnet_type_ref
-    #               address: *pac_server2_ip_ref
-    #               netmask: *subnet_netmask_ref
-    #               gateway: *gateway_ref
-    #         - *nameserver_ref
+    # - ip: *pac_server2_ip_ref
+    #   hostname: *pac_server2_hostname_ref
+    #   cloud_init: *cloud_init_ref
+    #     # user_data: *user_data_ref
+    #     # network_config:
+    #     #   network:
+    #     #     version: *network_version_ref
+    #     #     config:
+    #     #       - type: *network_type_ref
+    #     #         name: *network_name_ref
+    #     #         subnets:
+    #     #           - type: *subnet_type_ref
+    #     #             address: *pac_server2_ip_ref
+    #     #             netmask: *subnet_netmask_ref
+    #     #             gateway: *gateway_ref
+    #     #       - *nameserver_ref
     #   specs: *minio_server_specs_ref
     #   ca:
     #     client:
@@ -293,20 +318,22 @@ config:
     #     - *node_exporter_docker_ref
     #     - *cockroachdb_docker_ref
     #     - *minio_docker_ref
-    # - hostname: *pac_server3_hostname_ref
-    #   cloud_init:
-    #     user_data: *user_data_ref
-    #     network_config:
-    #       version: *network_version_ref
-    #       config:
-    #         - type: *network_type_ref
-    #           name: *network_name_ref
-    #           subnets:
-    #             - type: *subnet_type_ref
-    #               address: *pac_server3_ip_ref
-    #               netmask: *subnet_netmask_ref
-    #               gateway: *gateway_ref
-    #         - *nameserver_ref
+    # - ip: *pac_server3_ip_ref
+    #   hostname: *pac_server3_hostname_ref
+    #   cloud_init: *cloud_init_ref
+    #     # user_data: *user_data_ref
+    #     # network_config:
+    #     #   network:
+    #     #     version: *network_version_ref
+    #     #     config:
+    #     #       - type: *network_type_ref
+    #     #         name: *network_name_ref
+    #     #         subnets:
+    #     #           - type: *subnet_type_ref
+    #     #             address: *pac_server3_ip_ref
+    #     #             netmask: *subnet_netmask_ref
+    #     #             gateway: *gateway_ref
+    #     #       - *nameserver_ref
     #   specs: *minio_server_specs_ref
     #   ca:
     #     client:
@@ -319,20 +346,22 @@ config:
     #     - *node_exporter_docker_ref
     #     - *cockroachdb_docker_ref
     #     - *minio_docker_ref
-    # - hostname: *pac_server4_hostname_ref
-    #   cloud_init:
-    #     user_data: *user_data_ref
-    #     network_config:
-    #       version: *network_version_ref
-    #       config:
-    #         - type: *network_type_ref
-    #           name: *network_name_ref
-    #           subnets:
-    #             - type: *subnet_type_ref
-    #               address: *pac_server4_ip_ref
-    #               netmask: *subnet_netmask_ref
-    #               gateway: *gateway_ref
-    #         - *nameserver_ref
+    # - ip: *pac_server4_ip_ref
+    #   hostname: *pac_server4_hostname_ref
+    #   cloud_init: *cloud_init_ref
+    #     # user_data: *user_data_ref
+    #     # network_config:
+    #     #   network:
+    #     #     version: *network_version_ref
+    #     #     config:
+    #     #       - type: *network_type_ref
+    #     #         name: *network_name_ref
+    #     #         subnets:
+    #     #           - type: *subnet_type_ref
+    #     #             address: *pac_server4_ip_ref
+    #     #             netmask: *subnet_netmask_ref
+    #     #             gateway: *gateway_ref
+    #     #       - *nameserver_ref
     #   specs: *minio_server_specs_ref
     #   ca:
     #     client:

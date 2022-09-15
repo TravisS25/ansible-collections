@@ -1,6 +1,7 @@
 variable droplets {
     type        = list(
         object({
+            ip              = string
             hostname        = string
             cloud_init      = object({
                 network_config_file  = string

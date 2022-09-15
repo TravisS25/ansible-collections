@@ -46,11 +46,12 @@ resource "lxd_container" "droplets" {
     config = {
         "boot.autostart" = true
         "user.user-data" = file(var.droplets[count.index].cloud_init.user_data_file)
+        # "user.user-data" = file(var.droplets[count.index].cloud_init.user_data_file)
         # "user.user-data" = <<EOT
         #     #cloud-config
         #     ${file(var.droplets[count.index].cloud_init.user_data_file)}
         # EOT
-        #"cloud-init.network-config": yamlencode(file(var.droplets[count.index].cloud_init.network_config_file))
+        "user.network-config": file(var.droplets[count.index].cloud_init.network_config_file)
     }
 
     limits = {
@@ -58,16 +59,16 @@ resource "lxd_container" "droplets" {
         memory  = "${tostring(var.droplets[count.index].specs.memory)}MiB"
     }
 
-    # device {
-    #     name = "eth0"
-    #     type = "nic"
+    device {
+        name = "eth0"
+        type = "nic"
 
-    #     properties = {
-    #         nictype         = "bridged"
-    #         parent          = "${lxd_network.network.name}"
-    #         "ipv4.address"  = "${var.droplets[count.index].ip}"
-    #     }
-    # }
+        properties = {
+            nictype         = "bridged"
+            parent          = "${lxd_network.network.name}"
+            "ipv4.address"  = "${var.droplets[count.index].ip}"
+        }
+    }
 
     device {
         type = "disk"

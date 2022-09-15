@@ -1,6 +1,7 @@
 droplets = [
     {% for droplet in droplets -%}
     {
+        ip          = "{{ droplet.ip }}"
         hostname    = "{{ droplet.hostname }}"
         cloud_init  = {
             user_data_file       = "{{ droplet.cloud_init.user_data_file }}"

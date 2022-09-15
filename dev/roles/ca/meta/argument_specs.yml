@@ -11,7 +11,7 @@ base_ca_options: &base_ca_options_ref
       filename:
         type: str
         default: ca.pem
-        description: Filename of private key
+        description: Filename of cert
   key:
     type: dict
     description: Settings to store the host private key

@@ -1,0 +1,14 @@
+---
+- name: Test CA role
+  hosts: localhost
+
+  tasks:
+    # - name: Test file
+    #   file:
+    #     path: /tmp/test/test.txt
+    #     state: touch
+    - name: Import server ca role
+      delegate_to: 192.168.3.2
+      import_role:
+        name: traviss25.dev.ca
+        tasks_from: server

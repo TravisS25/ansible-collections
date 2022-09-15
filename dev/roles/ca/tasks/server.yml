@@ -1,10 +1,15 @@
 ---
+- name: Set default values
+  set_fact:
+    server_key: "{% if key is not defined %}{{ ca_server_defaults.key }}{% else %}{{ key }}{% endif %}"
+    server_cert: "{% if cert is not defined %}{{ ca_server_defaults.cert }}{% else %}{{ cert }}{% endif %}"
+
 - name: Set base server facts
   set_fact:
-    key_dir_path: "{{ key.dir_path | default(ca_server_defaults.key.dir_path) }}"
-    key_filename: "{{ key.filename | default(ca_server_defaults.key.filename) }}"
-    cert_dir_path: "{{ cert.dir_path | default(ca_server_defaults.cert.dir_path) }}"
-    cert_filename: "{{ cert.filename | default(ca_server_defaults.cert.filename) }}"
+    key_dir_path: "{% if 'dir_path' not in server_key %}{{ ca_server_defaults.key.dir_path }}{% else %}{{ server_key.dir_path }}{% endif %}"
+    key_filename: "{% if 'filename' not in server_key %}{{ ca_server_defaults.key.filename }}{% else %}{{ server_key.filename }}{% endif %}"
+    cert_dir_path: "{% if 'dir_path' not in server_cert %}{{ ca_server_defaults.cert.dir_path }}{% else %}{{ server_cert.dir_path }}{% endif %}"
+    cert_filename: "{% if 'filename' not in server_cert %}{{ ca_server_defaults.cert.filename }}{% else %}{{ server_cert.filename }}{% endif %}"
 
 - name: Set combine facts
   set_fact:
