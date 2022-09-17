@@ -8,6 +8,7 @@
     tf_workspace: "{{ workspace | default(main_defaults.workspace) }}"
     pac_tf_state_file: "{{ lookup('env', 'PAC_TF_STATE_FILE') }}"
     pac_tf_workspace_dir: "{{ lookup('env', 'PAC_TF_WORKSPACE_DIR') }}"
+    ssh_file_path: "{{ lookup('env', 'SSH_FILE_PATH') }}"
 
 - name: Local workspace block
   when: tf_workspace == 'local'
@@ -24,7 +25,9 @@
           - pac_tf_state_file != ""
           - pac_tf_workspace_dir is defined
           - pac_tf_workspace_dir != ""
-        fail_msg: Environment variables "PAC_TF_STATE_FILE" and "PAC_TF_WORKSPACE_DIR" must be set
+          - ssh_file_path is defined
+          - ssh_file_path != ""
+        fail_msg: Environment variables "PAC_TF_STATE_FILE", "SSH_FILE_PATH" and "PAC_TF_WORKSPACE_DIR" must be set
 
 - name: Assert remote_vars set
   when: tf_workspace != 'local'

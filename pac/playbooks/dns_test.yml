@@ -1,0 +1,71 @@
+---
+- name: Test DNS role
+  hosts: localhost
+  vars:
+    test:
+      hello: there
+
+  tasks:
+    - name: Set fact
+      set_fact:
+        docker: "test" &docker_ref
+
+    - name: Set stuff
+      set_fact:
+        merger:
+          <<: *docker_ref
+
+    - name: debug ref
+      debug:
+        msg: "{{ merger }}"
+
+    # - name: Delegate to dns server
+    #   delegate_to: 192.168.3.3
+    #   become: true
+    #   remote_user: pac-user
+    #   block:
+    #     - name: Install docker
+    #       import_role:
+    #         name: traviss25.docker.docker
+    #         tasks_from: install
+    #       vars:
+    #         username: pac-user
+
+    #     - name: Import dns role
+    #       import_role:
+    #         name: traviss25.dev.dns
+    #         tasks_from: main
+    #       vars:
+    #         server:
+    #           corefile:
+    #             records:
+    #               - name: "."
+    #                 blocks:
+    #                   - name: whoami
+    #                   - name: forward
+    #                     parameters:
+    #                       - "."
+    #                       - "8.8.8.8"
+    #                   - name: log
+    #                   - name: errors
+    #                   - name: cache
+    #               - name: pac-dev.com
+    #                 blocks:
+    #                   - name: hosts
+    #                     parameters:
+    #                       - /etc/coredns/hosts/pac-dev.com
+    #                       - pac-dev.com
+    #                     blocks:
+    #                       - name: ttl
+    #                         parameters:
+    #                           - 60
+    #                       - name: reload
+    #                         parameters:
+    #                           - 5
+    #           hosts:
+    #             - host_file: pac-dev.com
+    #               records:
+    #                 - ip: 192.168.3.4
+    #                   hostname: pac-server1
+    #                 - ip: 192.168.3.4
+    #                   hostname: minio1

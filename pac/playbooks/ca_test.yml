@@ -3,12 +3,23 @@
   hosts: localhost
 
   tasks:
-    # - name: Test file
-    #   file:
-    #     path: /tmp/test/test.txt
-    #     state: touch
-    - name: Import server ca role
-      delegate_to: 192.168.3.2
+    # - name: Import server ca role
+    #   delegate_to: 192.168.3.2
+    #   become: true
+    #   remote_user: pac-user
+    #   import_role:
+    #     name: traviss25.dev.ca
+    #     tasks_from: server
+
+    - name: Import client ca role
+      delegate_to: 192.168.3.3
+      become: true
+      remote_user: pac-user
       import_role:
         name: traviss25.dev.ca
-        tasks_from: server
+        tasks_from: client
+      vars:
+        subject_alt_names:
+          - "DNS:dns-server.pac-dev.com"
+        ca_server:
+          ip: 192.168.3.2

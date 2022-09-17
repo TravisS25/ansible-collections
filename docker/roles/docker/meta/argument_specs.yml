@@ -38,6 +38,7 @@ install_options: &install_options_ref
   docker_version:
     type: str
     default: 5:20.10.17~3-0~ubuntu-focal
+    description: Docker version to install of droplet
 
 image_pull_options: &image_pull_options_ref
   image:

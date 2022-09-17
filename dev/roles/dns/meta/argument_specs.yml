@@ -81,18 +81,43 @@ corefile_options: &corefile_options_ref
             elements: dict
             description: Recursive list of this dict
 
-install_options: &install_options_ref
+main_run_options: &main_run_options_ref
+  container_params:
+    type: dict
+    description: Dict of parameters for coredns container
+    default:
+      command:
+        - "-conf=/etc/coredns/Corefile"
+  container_action:
+    type: str
+    choices:
+      - start
+      - restart
+      - stop
+    default: start
+    description: Docker action to apply to coredns container
+  container_name:
+    type: str
+    default: coredns
+    description: Container name of coredns docker container
   coredns_version:
     type: str
     default: 1.9.3
     description: Version of coredns to download
+
+run_options: &run_options_ref
+  <<: *main_run_options_ref
+  corefile_path:
+    type: str
+    default: /etc/coredns/Corefile
+    description: Absolute file path to Corefile
 
 main_options: &main_options_ref
   server:
     type: dict
     description: Sets up dns server on current droplet
     options:
-      <<: *install_options_ref
+      <<: *main_run_options_ref
       corefile:
         type: dict
         required: true
@@ -126,13 +151,13 @@ argument_specs:
     short_description: Main prelight
     options: *main_options_ref
 
-  install:
-    description: Install requirements for dns server
-    options: *install_options_ref
+  run:
+    description: Run requirements and run dns server
+    options: *run_options_ref
 
-  install_preflight:
-    short_description: Install preflight
-    options: *install_options_ref
+  run_preflight:
+    short_description: Run preflight
+    options: *run_options_ref
 
   host_file:
     description: Creates host format file for Corefile to use

@@ -1,7 +1,7 @@
 ---
 - name: Set terraform facts
   set_fact:
-    converted_droplets: []
+    updated_droplets: []
     tf_backend_config: {}
     tf_root_path: ''
     tf_current_state_file: ''
@@ -13,39 +13,38 @@
     pac_tf_state_file: "{{ lookup('env', 'PAC_TF_STATE_FILE') }}"
     pac_tf_workspace_dir: "{{ lookup('env', 'PAC_TF_WORKSPACE_DIR') }}"
     pac_tf_plan_file: "/tmp/pac_terraform.tfplan"
-    tmp_network_config_file: /tmp/terraform_network_config
-    tmp_user_data_file: /tmp/terraform_user_data
+    network_config_file: /tmp/pac_terraform_network_config
+    user_data_file: /tmp/pac_terraform_user_data
+    vendor_data_file: /tmp/pac_terraform_vendor_data
+    ssh_file_path: "{{ lookup('env', 'SSH_FILE_PATH') }}"
 
 - name: Convert droplets for terraform
   loop: "{{ local_vars.droplets }}"
   vars:
-    new_droplet:
-      ip: "{{ item.ip }}"
-      hostname: "{{ item.hostname }}"
-      specs: "{{ item.specs }}"
-      cloud_init:
-        user_data_yaml: "{{ item.cloud_init.user_data }}"
-        user_data_file: "{{ tmp_user_data_file }}_{{ item.hostname }}.yml"
-        network_config_yaml: "{{ item.cloud_init.network_config }}"
-        network_config_file: "{{ tmp_network_config_file }}_{{ item.hostname }}.yml"
+    tmpl_vars:
+      droplet: "{{ item }}"
+      ssh_file_content: "{{ lookup('file', ssh_file_path) }}"
+      network_config_file: "{{ network_config_file + '_' + item.hostname + '.yml' }}"
+      user_data_file: "{{ user_data_file + '_' + item.hostname + '.yml' }}"
+      vendor_data_file: "{{ vendor_data_file + '_' + item.hostname + '.yml' }}"
   set_fact:
-    converted_droplets: "{{ converted_droplets + [new_droplet] }}"
+    updated_droplets: "{{ updated_droplets + [lookup('template', 'convert_droplet.j2', template_vars=tmpl_vars) | from_yaml] }}"
 
 - name: Write temp files for user data
-  loop: "{{ converted_droplets }}"
+  loop: "{{ updated_droplets }}"
   template:
-    src: cloud_init.j2
+    src: user_data.j2
     dest: "{{ item.cloud_init.user_data_file }}"
   vars:
-    yaml_content: "{{ item.cloud_init.user_data_yaml }}"
+    yaml_content: "{{ item.cloud_init.user_data }}"
 
 - name: Write temp files for network config
-  loop: "{{ converted_droplets }}"
+  loop: "{{ updated_droplets }}"
   template:
-    src: cloud_init.j2
+    src: yaml.j2
     dest: "{{ item.cloud_init.network_config_file }}"
   vars:
-    yaml_content: "{{ item.cloud_init.network_config_yaml }}"
+    yaml_content: "{{ item.cloud_init.network_config }}"
 
 - name: Local workspace block
   when: tf_workspace == 'local'
@@ -64,7 +63,7 @@
         dest: "{{ tf_tfvars_file }}"
         mode: 0600
       vars:
-        droplets: "{{ converted_droplets }}"
+        droplets: "{{ updated_droplets }}"
         terraform: "{{ local_vars.terraform }}"
 
     - name: Planning state block
@@ -122,13 +121,13 @@
   #       state: absent
 
   #   - name: Remove user data files
-  #     loop: "{{ converted_droplets }}"
+  #     loop: "{{ updated_droplets }}"
   #     file:
   #       path: "{{ item.cloud_init.user_data_file }}"
   #       state: absent
 
   #   - name: Remove network config files
-  #     loop: "{{ converted_droplets }}"
+  #     loop: "{{ updated_droplets }}"
   #     file:
   #       path: "{{ item.cloud_init.network_config_file }}"
   #       state: absent

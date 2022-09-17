@@ -16,10 +16,15 @@
     private_key_full_path: "{{ (key_dir_path, key_filename) | path_join }}"
     cert_full_path: "{{ (cert_dir_path, cert_filename) | path_join }}"
 
-- name: Create server ssl directory
+- name: Create server ssl key directory
   file:
     state: directory
     path: "{{ key_dir_path }}"
+
+- name: Create server ssl cert directory
+  file:
+    state: directory
+    path: "{{ cert_dir_path }}"
 
 - name: Create private key
   community.crypto.openssl_privatekey:

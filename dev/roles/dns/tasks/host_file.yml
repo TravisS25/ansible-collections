@@ -38,39 +38,6 @@
     path: "{{ host_file_path }}"
     block: "{{ item.ip }} {{ item.host }}"
 
-# - name: Append to host file block
-#   when: file_state == 'append'
-#   block:
-#     - name: Generate random file name
-#       set_fact:
-#         tmp_file_name: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=8') }}"
-
-#     - name: Create temp dir
-#       file:
-#         state: directory
-#         path: "{{ root_dir }}/tmp"
-#       register: tmp_dir
-
-#     - name: Set append file host facts
-#       set_fact:
-#         tmp_file_path: "{{ (tmp_dir.path, tmp_file_name) | path_join }}"
-
-#     - name: Use template to generate temp host file
-#       template:
-#         src: host.j2
-#         dest: "{{ tmp_file_path }}"
-#         mode: 0777
-#       vars:
-#         records: "{{ records }}"
-
-#     - name: Append temp to hosts file
-#       shell: "cat {{ tmp_file_path }} >> {{ host_file_path }}"
-
-#     - name: Delete temp file
-#       file:
-#         path: tmp_file_path
-#         state: absent
-
 - name: Replace host file
   when: file_state == 'update'
   loop: "{{ records }}"

@@ -1,14 +1,44 @@
 ---
-- name: Import container action task for alert manager
-  import_task: container_action.yaml
-  vars:
-    action: "{{ vars.action }}"
-    image: "{{ vars.image }}"
-    params:
-      name: alert_manager
+# - name: Import container action task for alert manager
+#   import_task: container_action.yaml
+#   vars:
+#     action: "{{ vars.action }}"
+#     image: "{{ vars.image }}"
+#     params:
+#       name: alert_manager
+#       hostname: alert_manager
+#       restart_policy: always
+#       publish_all_ports: yes
+#       mounts:
+#         - source: "{{ vars.storage_path }}"
+#           target: /etc/alertmanager/alertmanager.yml
+
+- name: Set alert manager facts
+  set_fact:
+    alert_manager_params: &alert_manager_params_ref
+      name: "{{ vars.name }}"
+      image: "{{ vars.image }}"
       hostname: alert_manager
       restart_policy: always
       publish_all_ports: yes
       mounts:
-        - source: "{{ vars.storage_path }}"
+        - source: "{{ vars.config_path }}"
           target: /etc/alertmanager/alertmanager.yml
+
+- name: Start container
+  when: vars.action == 'start'
+  community.docker.docker_container:
+    <<: *alert_manager_params_ref
+
+- name: Restart container
+  when: action == 'restart'
+  community.docker.docker_container:
+    state: started
+    restart: yes
+    <<: *alert_manager_params_ref
+
+- name: Stop container
+  when: action == 'stop'
+  community.docker.docker_container:
+    state: stopped
+    <<: *alert_manager_params_ref

@@ -1,14 +1,22 @@
 ---
+- name: Set default values
+  set_fact:
+    server_key: "{% if ca_server.key is not defined %}{{ ca_server_defaults.key }}{% else %}{{ ca_server.key }}{% endif %}"
+    server_cert: "{% if ca_server.cert is not defined %}{{ ca_server_defaults.cert }}{% else %}{{ ca_server.cert }}{% endif %}"
+    client_key: "{% if key is not defined %}{{ ca_client_defaults.key }}{% else %}{{ ca_server.key }}{% endif %}"
+    client_cert: "{% if cert is not defined %}{{ ca_client_defaults.cert }}{% else %}{{ ca_server.cert }}{% endif %}"
+
 - name: Set base client facts
   set_fact:
-    client_key_dir_path: "{{ key.dir_path | default(ca_client_defaults.key.dir_path) }}"
-    client_key_filename: "{{ key.filename | default(ca_client_defaults.key.filename) }}"
-    client_cert_dir_path: "{{ cert.dir_path | default(ca_client_defaults.cert.dir_path) }}"
-    client_cert_filename: "{{ cert.filename | default(ca_client_defaults.cert.filename) }}"
-    server_key_dir_path: "{{ ca_server.key.dir_path | default(ca_server_defaults.key.dir_path) }}"
-    server_key_filename: "{{ ca_server.key.filename | default(ca_server_defaults.key.filename) }}"
-    server_cert_dir_path: "{{ ca_server.cert.dir_path | default(ca_server_defaults.cert.dir_path) }}"
-    server_cert_filename: "{{ ca_server.cert.filename | default(ca_server_defaults.cert.filename) }}"
+    server_key_dir_path: "{% if 'dir_path' not in server_key %}{{ ca_server_defaults.key.dir_path }}{% else %}{{ server_key.dir_path }}{% endif %}"
+    server_key_filename: "{% if 'filename' not in server_key %}{{ ca_server_defaults.key.filename }}{% else %}{{ server_key.filename }}{% endif %}"
+    server_cert_dir_path: "{% if 'dir_path' not in server_cert %}{{ ca_server_defaults.cert.dir_path }}{% else %}{{ server_cert.dir_path }}{% endif %}"
+    server_cert_filename: "{% if 'filename' not in server_cert %}{{ ca_server_defaults.cert.filename }}{% else %}{{ server_cert.filename }}{% endif %}"
+    
+    client_key_dir_path: "{% if 'dir_path' not in client_key %}{{ ca_client_defaults.key.dir_path }}{% else %}{{ client_key.dir_path }}{% endif %}"
+    client_key_filename: "{% if 'filename' not in client_key %}{{ ca_client_defaults.key.filename }}{% else %}{{ client_key.filename }}{% endif %}"
+    client_cert_dir_path: "{% if 'dir_path' not in client_cert %}{{ ca_client_defaults.cert.dir_path }}{% else %}{{ client_cert.dir_path }}{% endif %}"
+    client_cert_filename: "{% if 'filename' not in client_cert %}{{ ca_client_defaults.cert.filename }}{% else %}{{ client_cert.filename }}{% endif %}"
 
 - name: Set combine facts
   set_fact:
@@ -17,10 +25,15 @@
     server_key_full_path: "{{ (server_key_dir_path, server_key_filename) | path_join }}"
     server_cert_full_path: "{{ (server_cert_dir_path, server_cert_filename) | path_join }}"
 
-- name: Create client ssl directory
+- name: Create client ssl key directory
   file:
     state: directory
     path: "{{ client_key_dir_path }}"
+  
+- name: Create client ssl cert directory
+  file:
+    state: directory
+    path: "{{ client_cert_dir_path }}"
 
 - name: Create private key for client
   community.crypto.openssl_privatekey:
@@ -34,21 +47,36 @@
   run_once: true
   register: csr
 
-- name: Sign certificate with our CA
-  community.crypto.x509_certificate_pipe:
-    csr_content: "{{ csr.csr }}"
-    provider: ownca
-    ownca_path: "{{ server_cert_full_path }}"
-    ownca_privatekey_path: "{{ server_key_full_path }}"
-    ownca_not_after: +365d # valid for one year
-    ownca_not_before: "-1d" # valid since yesterday
+- name: CA server block
   delegate_to: "{{ ca_server.ip }}"
-  run_once: true
-  register: certificate
+  block:
+    - name: Sign certificate with our CA
+      community.crypto.x509_certificate_pipe:
+        csr_content: "{{ csr.csr }}"
+        provider: ownca
+        ownca_path: "{{ server_cert_full_path }}"
+        ownca_privatekey_path: "{{ server_key_full_path }}"
+        ownca_not_after: +365d # valid for one year
+        ownca_not_before: "-1d" # valid since yesterday
+      run_once: true
+      register: certificate
+
+    - name: Get CA server certificate content
+      slurp:
+        src: "{{ server_cert_full_path }}"
+      register: ca_file
 
 - name: Write certificate file back to client
   copy:
     dest: "{{ client_cert_full_path }}"
     content: "{{ certificate.certificate }}"
-  #delegate_to: "{{ ip }}"
   run_once: true
+
+- name: Add CA server root certificate to trusted certs
+  copy:
+    dest: /usr/share/ca-certificates/ca-server.crt
+    content: "{{ ca_file.content | b64decode }}"
+
+- name: Update ca-certificates
+  become: true
+  shell: update-ca-certificates

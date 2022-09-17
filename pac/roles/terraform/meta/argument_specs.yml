@@ -94,6 +94,9 @@ main_options: &main_options_ref
             required: true
             description: Cloud init settings
             options:
+              vendor_data:
+                type: dict
+                description: Vendor data settings for cloud init
               user_data:
                 type: dict
                 required: true
@@ -115,10 +118,14 @@ main_options: &main_options_ref
                           - 1
                           - 2
                         description: Which version of network config to use
+                      ethernets:
+                        type: dict
+                        # required: true
+                        description: Config settings for network
                       config:
                         type: list
                         elements: dict
-                        required: true
+                        # required: true
                         description: Config settings for network
           specs:
             type: dict

@@ -6,6 +6,7 @@ droplets = [
         cloud_init  = {
             user_data_file       = "{{ droplet.cloud_init.user_data_file }}"
             network_config_file  = "{{ droplet.cloud_init.network_config_file }}"
+            vendor_data_file     = "{{ droplet.cloud_init.vendor_data_file }}"
         }
         specs   = {
             cpus    = {{ droplet.specs.cpus }}

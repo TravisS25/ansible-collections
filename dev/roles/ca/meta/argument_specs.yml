@@ -30,10 +30,6 @@ server_options: &server_options_ref
 
 client_options: &client_options_ref
   <<: *base_ca_options_ref
-  ip:
-    type: str
-    required: true
-    description: IP of ca client
   subject_alt_names:
     type: list
     required: true

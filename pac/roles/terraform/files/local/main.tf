@@ -44,14 +44,10 @@ resource "lxd_container" "droplets" {
     start_container = true
 
     config = {
-        "boot.autostart" = true
-        "user.user-data" = file(var.droplets[count.index].cloud_init.user_data_file)
-        # "user.user-data" = file(var.droplets[count.index].cloud_init.user_data_file)
-        # "user.user-data" = <<EOT
-        #     #cloud-config
-        #     ${file(var.droplets[count.index].cloud_init.user_data_file)}
-        # EOT
-        "user.network-config": file(var.droplets[count.index].cloud_init.network_config_file)
+        "boot.autostart"        = true
+        "user.user-data"        = file(var.droplets[count.index].cloud_init.user_data_file)
+        # "user.vendor-data"      = var.droplets[count.index].cloud_init.vendor_data_file == "" ? "" : file(var.droplets[count.index].cloud_init.vendor_data_file)
+        "user.network-config"   = file(var.droplets[count.index].cloud_init.network_config_file)
     }
 
     limits = {

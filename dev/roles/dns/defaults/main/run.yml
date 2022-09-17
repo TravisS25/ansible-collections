@@ -1,0 +1,5 @@
+---
+run_defaults:
+  coredns_version: 1.9.3
+  corefile_path: /etc/coredns/Corefile
+  container_action: start

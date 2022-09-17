@@ -6,6 +6,7 @@ variable droplets {
             cloud_init      = object({
                 network_config_file  = string
                 user_data_file       = string
+                vendor_data_file     = string
             })
             specs            = object({
                 cpus    = number

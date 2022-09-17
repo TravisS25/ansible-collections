@@ -1,0 +1,36 @@
+---
+- name: Set base coredns run facts
+  set_fact:
+    container_image: "coredns/coredns:{{ coredns_version | default(run_defaults.coredns_version) }}"
+
+- name: Set docker params facts
+  set_fact:
+    coredns_params: &coredns_params_ref
+      name: "{{ container_name }}"
+      hostname: "{{ container_name }}"
+      image: "{{ container_image }}"
+      command:
+        - "-conf={{ corefile_path }}"
+
+- name: Get coredns container info
+  docker_container_info:
+    name: "{{ container_name }}"
+  register: coredns_info
+
+- name: Pull coredns docker image
+  when: not coredns_info.exists
+  import_role:
+    name: traviss25.docker.docker
+    tasks_from: image_pull
+  vars:
+    image: "{{ container_image }}"
+
+- name: Import docker container action
+  import_role:
+    name: traviss25.docker.docker
+    tasks_from: container_action.yml
+  vars:
+    name: "{{ container_name }}"
+    image: "{{ container_image }}"
+    action: "{{ container_action }}"
+    params: "{{ container_params }}"
