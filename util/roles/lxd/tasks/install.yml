@@ -1,0 +1,24 @@
+---
+- name: Install lxd
+  snap:
+    name: lxd
+
+- name: Add current user to lxd group
+  user:
+    name: "{{ ansible_user_id }}"
+    groups: lxd
+
+- name: Launch lxd server with preseed
+  become: true
+  when: preseed_file is defined
+  shell: "lxd init --preseed < {{ lookup('file', preseed_file) }}"
+
+- name: Launch lxd server with minimal settings
+  become: true
+  when: preseed_file is not defined
+  shell: lxd init --minimal
+
+- name: Start basic lxd server
+  become: true
+  when: preseed_file is not defined
+  shell: "lxd init --preseed < {{ preseed_file }}"

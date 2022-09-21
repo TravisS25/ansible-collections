@@ -2,22 +2,16 @@
 - name: Import corefile task
   import_tasks: corefile.yml
   vars:
-    file_state: "{{ server.corefile.file_state }}"
-    root_dir: "{{ server.corefile.root_dir }}"
-    records: "{{ server.corefile.records }}"
+    file_state: "{{ corefile.file_state }}"
+    root_dir: "{{ corefile.root_dir }}"
+    records: "{{ corefile.records }}"
 
 - name: Import host file task
-  when: server.hosts is defined
-  loop: "{{ server.hosts }}"
+  when: hosts is defined
+  loop: "{{ hosts }}"
   include_tasks: host_file.yml
   vars:
     file_state: "{{ item.file_state }}"
     root_dir: "{{ item.root_dir }}"
     host_file: "{{ item.host_file }}"
     records: "{{ item.records }}"
-
-- name: Import coredns run
-  import_tasks: run.yml
-  vars:
-    coredns_version: "{{ server.coredns_version | default(omit) }}"
-    corefile_path: "{{ server.corefile.rootdir + '/Corefile' }}"

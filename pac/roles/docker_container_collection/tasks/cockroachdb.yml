@@ -1,0 +1,48 @@
+---
+- name: Create cockroach storage path
+  file:
+    state: directory
+    path: "{{ vars.storage_path }}"
+
+- name: Set cockroachdb container facts
+  set_fact:
+    cockroachdb_container_params: &cockroachdb_container_params_ref
+      name: cockroachdb
+      hostname: cockroachdb
+      image: cockroachdb/cockroach:v22.1.3
+      restart_policy: always
+      publish_all_ports: yes
+      command: "{{ vars.start_command }}"
+      mounts:
+        - source: "{{ vars.storage_path }}"
+          target: /cockroach/cockroach-data
+
+- name: Start container
+  when: action == 'start'
+  community.docker.docker_container:
+    <<: *cockroachdb_container_params_ref
+
+- name: Restart container
+  when: action == 'restart'
+  community.docker.docker_container:
+    state: started
+    restart: yes
+    <<: *cockroachdb_container_params_ref
+
+- name: Stop container
+  when: action == 'stop'
+  community.docker.docker_container:
+    state: stopped
+    <<: *cockroachdb_container_params_ref
+
+- name: Init cluster block
+  when: vars.init_command is defined and vars.action == 'start'
+  block:
+    - name: Update docker params
+      set_fact:
+        cockroachdb_container_params: "{{ cockroachdb_container_params | combine({'command': vars.init_command}) }}"
+    
+    - name: Start container
+      when: action == 'start'
+      community.docker.docker_container:
+        <<: *cockroachdb_container_params_ref

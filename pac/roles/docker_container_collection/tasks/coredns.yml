@@ -1,0 +1,30 @@
+---
+- name: Set coredns facts
+  set_fact:
+    coredns_params: &coredns_params_ref
+      name: coredns
+      image: coredns/coredns:1.9.4
+      hostname: coredns
+      restart_policy: always
+      publish_all_ports: yes
+      mounts:
+        - source: "{{ vars.config_file }}"
+          target: /etc/coredns/Corefile
+
+- name: Start container
+  when: vars.action == 'start'
+  community.docker.docker_container:
+    <<: *coredns_params_ref
+
+- name: Restart container
+  when: vars.action == 'restart'
+  community.docker.docker_container:
+    state: started
+    restart: yes
+    <<: *coredns_params_ref
+
+- name: Stop container
+  when: vars.action == 'stop'
+  community.docker.docker_container:
+    state: stopped
+    <<: *coredns_params_ref

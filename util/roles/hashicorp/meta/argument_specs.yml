@@ -1,0 +1,20 @@
+---
+install_options: &install_options_ref
+  package:
+    type: str
+    required: true
+    description: Hashicorp package to install
+    choices:
+      - terraform
+      - packer
+      - vault
+      
+argument_specs:
+  install:
+    description: Main entry into installing hashicorp software
+    options: *install_options_ref
+  install_preflight:
+    description: Install preflight
+    options: *install_options_ref
+        
+        

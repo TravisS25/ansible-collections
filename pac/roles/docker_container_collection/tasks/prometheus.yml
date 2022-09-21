@@ -1,0 +1,39 @@
+---
+- name: Create prometheus storage path
+  file:
+    state: directory
+    path: "{{ vars.storage_path }}"
+
+- name: Set prometheus facts
+  set_fact:
+    prometheus_params: &prometheus_params_ref
+      name: prometheus
+      hostname: prometheus
+      image: prom/prometheus:v2.37.0
+      restart_policy: always
+      publish_all_ports: yes
+      command:
+        - --web.enable-lifecycle
+        - --storage.tsdb.path=/etc/prometheus/data/
+        - --config.file=/etc/prometheus/prometheus.yml
+      mounts:
+        - source: "{{ vars.storage_path }}"
+          target: /etc/prometheus/data/
+
+- name: Start container
+  when: vars.action == 'start'
+  community.docker.docker_container:
+    <<: *prometheus_params_ref
+
+- name: Restart container
+  when: vars.action == 'restart'
+  community.docker.docker_container:
+    state: started
+    restart: yes
+    <<: *prometheus_params_ref
+
+- name: Stop container
+  when: vars.action == 'stop'
+  community.docker.docker_container:
+    state: stopped
+    <<: *prometheus_params_ref

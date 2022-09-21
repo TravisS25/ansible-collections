@@ -8,7 +8,7 @@
   tasks:
     - name: Set fact
       set_fact:
-        docker: "test" &docker_ref
+        docker: &docker_ref foo
 
     - name: Set stuff
       set_fact:

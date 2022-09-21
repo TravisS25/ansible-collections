@@ -1,0 +1,50 @@
+---
+- name: Delegate block
+  delegate_to: "{{ droplet.ip }}"
+  become: true
+  remote_user: "{{ droplet.username }}"
+  block:
+    - name: CA server preflight
+      when: droplet.ca is defined and droplet.ca.server is defined
+      import_role:
+        name: traviss25.dev.ca
+        tasks_from: server_preflight
+      vars:
+        cert: "{{ droplet.ca.server.cert | default({}) }}"
+        key: "{{ droplet.ca.server.key | default({}) }}"
+
+    - name: CA client preflight
+      when: droplet.ca is defined and droplet.ca.client is defined
+      include_role:
+        name: traviss25.dev.ca
+        tasks_from: client_preflight
+      vars:
+        cert: "{{ droplet.ca.client.cert | default({}) }}"
+        key: "{{ droplet.ca.client.key | default({}) }}"
+        subject_alt_names: "{{ droplet.ca.client.subject_alt_names }}"
+        ca_server:
+          ip: "{{ droplet.ca.client.ca_server.ip }}"
+
+    - name: DNS preflight
+      when: droplet.dns is defined
+      include_role:
+        name: traviss25.dev.dns
+      vars:
+        corefile: "{{ droplet.dns.corefile }}"
+        hosts: "{{ droplet.dns.hosts }}"
+
+    - name: Docker container preflight
+      loop: "{{ droplet.docker_containers }}"
+      include_role:
+        name: docker_container_collection
+        tasks_from: "{{ item.name }}"
+      vars:
+        container: "{{ item }}"
+
+    - name: Docker compose preflight
+      loop: "{{ droplet.docker_composes | default([]) }}"
+      include_role:
+        name: docker_compose_collection
+        tasks_from: "{{ item.name }}"
+      vars:
+        compose: "{{ item }}"

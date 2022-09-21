@@ -1,0 +1,66 @@
+---
+# Don't need a preflight file for this task as this task is simply
+# a wrapper for prelights for other tasks
+#
+# This task simply has a bool flag to indicate whether we are running
+# in preflight mode or actually executing tasks
+
+- name: Set setup facts
+  set_fact:
+    ca_server_task: "{% if preflight %}server_preflight{% else %}server{% endif %}"
+    ca_client_task: "{% if preflight %}client_preflight{% else %}client{% endif %}"
+    docker_install_task: "{% if preflight %}install_preflight{% else %}install{% endif %}"
+    dns_task: "{% if preflight %}main_preflight{% endif %}main{% endif %}"
+
+- name: CA server preflight
+  when: droplet.ca is defined and droplet.ca.server is defined
+  import_role:
+    name: traviss25.dev.ca
+    tasks_from: "{{ ca_server_task }}"
+  vars:
+    cert: "{{ droplet.ca.server.cert | default({}) }}"
+    key: "{{ droplet.ca.server.key | default({}) }}"
+
+- name: CA client preflight
+  when: droplet.ca is defined and droplet.ca.client is defined
+  include_role:
+    name: traviss25.dev.ca
+    tasks_from: "{{ ca_server_task }}"
+  vars:
+    cert: "{{ droplet.ca.client.cert | default({}) }}"
+    key: "{{ droplet.ca.client.key | default({}) }}"
+    subject_alt_names: "{{ droplet.ca.client.subject_alt_names }}"
+    ca_server:
+      ip: "{{ droplet.ca.client.ca_server.ip }}"
+
+- name: Import docker install role
+  when: droplet.dns is defined
+  import_role:
+    name: traviss25.docker.docker
+    tasks_from: "{{ dns_task }}"
+  vars:
+    corefile: "{{ droplet.dns.corefile }}"
+
+- name: Import docker install role
+  import_role:
+    name: traviss25.docker.docker
+    tasks_from: "{{ docker_install_task }}"
+  vars:
+    users: 
+      - "{{ droplet.user }}"
+
+- name: Import docker container task
+  loop: "{{ droplet.docker_containers }}"
+  include_role:
+    name: traviss25.pac.docker_container_collection
+    tasks_from: "{{ item.name }}"
+  vars:
+    vars: "{{ item.vars }}"
+
+- name: Import docker compose task
+  loop: "{{ droplet.docker_composes | default([]) }}"
+  include_role:
+    name: traviss25.docker.docker
+    tasks_from: "{{ item.name }}"
+  vars:
+    vars: "{{ item.vars }}"

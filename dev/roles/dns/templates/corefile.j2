@@ -1,7 +1,7 @@
 {% set indent = 4 %}
-{% for server_block in server_blocks %}
-{{ server_block.name }} {
-{% for block in server_block.blocks recursive %}
+{% for record in records %}
+{{ record.name }} {
+{% for block in record.blocks recursive %}
 {% if block.blocks is defined %}
 {{ block.name|indent((indent * loop.depth), true) }} {% if block.parameters is defined %}{% for param in block.parameters %}{{ param }} {% endfor %}{% endif %}{
 {{ loop(block.blocks) }}

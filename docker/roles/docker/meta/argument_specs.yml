@@ -32,9 +32,10 @@ from_collection: &from_collection_ref
   description: Determine whether to use premade image template for container/compose
 
 install_options: &install_options_ref
-  username:
-    type: str
-    description: Username to add to docker group that is created
+  users:
+    type: list
+    elements: str
+    description: Users to add to docker group that is created
   docker_version:
     type: str
     default: 5:20.10.17~3-0~ubuntu-focal

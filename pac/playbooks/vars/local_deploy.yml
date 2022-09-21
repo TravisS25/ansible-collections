@@ -1,0 +1,257 @@
+---
+minio1_path: &minio1_path_ref /mnt/minio1
+minio2_path: &minio2_path_ref /mnt/minio2
+minio3_path: &minio3_path_ref /mnt/minio3
+minio4_path: &minio4_path_ref /mnt/minio4
+
+ca_server_ip: &ca_server_ip_ref 192.168.3.2
+ca_server_hostname: &ca_server_hostname_ref ca-server
+
+dns_server_ip: &dns_server_ip_ref 192.168.3.3
+dns_server_hostname: &dns_server_hostname_ref dns-server
+
+pac_server1_ip: &pac_server1_ip_ref 192.168.3.4
+pac_server1_hostname: &pac_server1_hostname_ref pac-server1
+
+pac_server2_ip: &pac_server2_ip_ref 192.168.3.5
+pac_server2_hostname: &pac_server2_hostname_ref pac-server2
+
+pac_server3_ip: &pac_server3_ip_ref 192.168.3.6
+pac_server3_hostname: &pac_server3_hostname_ref pac-server3
+
+pac_server4_ip: &pac_server4_ip_ref 192.168.3.7
+pac_server4_hostname: &pac_server4_hostname_ref pac-server4
+
+pac_user: &pac_user_ref pac-user
+pac_domain: &pac_domain_ref pac-dev.com
+alertmanager_config_file: &alertmanager_config_file_ref /etc/alertmanager/alertmanager.yml
+coredns_config_file: &coredns_config_file_ref /etc/coredns/Corefile
+
+ca_server: &ca_server_ref
+  ip: *ca_server_ip_ref
+
+coredns_docker: &coredns_docker_ref
+  name: coredns
+  vars:
+    config_file: *coredns_config_file_ref
+
+minio_docker: &minio_docker_ref
+  name: minio
+  vars:
+    storage_path: /mnt/minio
+
+node_exporter_docker: &node_exporter_docker_ref
+  name: node_exporter
+  vars:
+    storage_path: /mnt/storage/node_exporter
+
+grafana_docker: &grafana_docker_ref
+  name: grafana
+  vars:
+    storage_path: /mnt/storage/grafana
+
+prometheus_docker: &prometheus_docker_ref
+  name: prometheus
+  vars:
+    storage_path: /mnt/storage/promethues
+
+cockroachdb_docker: &cockroachdb_docker_ref
+  name: cockroachdb
+  vars:
+    storage_path: /mnt/storage/cockroachdb
+
+alertmanager_docker: &alert_manager_docker_ref
+  name: alertmanager
+  vars:
+    config_file: *alertmanager_config_file_ref
+
+redis_docker: &redis_docker_ref
+  name: redis
+
+specs: &specs_ref
+  memory: 2048
+  cpus: 1
+
+disks: &disks_ref
+  - name: minio1
+    path: *minio1_path_ref
+    size: 1
+  - name: minio2
+    path: *minio2_path_ref
+    size: 1
+  - name: minio3
+    path: *minio3_path_ref
+    size: 1
+  - name: minio4
+    path: *minio4_path_ref
+    size: 1
+
+minio_server_specs: &minio_server_specs_ref
+  memory: 2048
+  cpus: 1
+  disks: *disks_ref
+
+dns_client: &dns_client_ref
+  client:
+    dns_server:
+      ip: *dns_server_ip_ref
+
+cloud_init: &cloud_init_ref
+  user_data:
+    users:
+      - name: *pac_user_ref
+        primary_group: *pac_user_ref
+        groups: sudo
+        sudo: ALL=(ALL) NOPASSWD:ALL
+        shell: /bin/bash
+  network_config:
+    network:
+      version: 2
+      ethernets:
+        eth0:
+          dhcp4: true
+          dhcp4-overrides:
+            use-dns: no
+          nameservers:
+            addresses: 
+              - *dns_server_ip_ref
+              - 8.8.8.8
+
+config:
+  terraform: {}
+    
+  droplets:
+    - ip: *ca_server_ip_ref
+      hostname: *ca_server_hostname_ref
+      username: *pac_user_ref
+      cloud_init: *cloud_init_ref
+      specs: *specs_ref
+      ca:
+        server: {}
+    - ip: *dns_server_ip_ref
+      hostname: *dns_server_hostname_ref
+      username: *pac_user_ref
+      cloud_init: *cloud_init_ref
+      specs: *specs_ref
+      dns:
+        corefile:
+          records:
+            - name: "."
+              blocks:
+                - name: whoami
+                - name: forward
+                  parameters:
+                    - "."
+                    - "8.8.8.8"
+                - name: log
+                - name: errors
+                - name: cache
+            - name: *pac_domain_ref
+              blocks:
+                - name: hosts
+                  parameters:
+                    - /etc/coredns/hosts/pac-dev.com
+                    - *pac_domain_ref
+                  blocks:
+                    - name: ttl
+                      parameters:
+                        - 60
+                    - name: reload
+                      parameters:
+                        - 5
+        hosts:
+          - host_file: *pac_domain_ref
+            records:
+              - ip: *pac_server1_ip_ref
+                hostname: *pac_server1_hostname_ref
+              - ip: *pac_server1_ip_ref
+                hostname: minio1
+              - ip: *pac_server2_ip_ref
+                hostname: *pac_server2_hostname_ref
+              - ip: *pac_server2_ip_ref
+                hostname: minio2
+              - ip: *pac_server3_ip_ref
+                hostname: *pac_server3_hostname_ref
+              - ip: *pac_server3_ip_ref
+                hostname: minio3
+              - ip: *pac_server4_ip_ref
+                hostname: *pac_server4_hostname_ref
+              - ip: *pac_server4_ip_ref
+                hostname: minio4
+      docker_containers:
+        - *coredns_docker_ref
+    - ip: *pac_server1_ip_ref
+      hostname: *pac_server1_hostname_ref
+      username: *pac_user_ref
+      cloud_init: *cloud_init_ref
+      specs: *minio_server_specs_ref
+      transfer:
+        - source_env_var: PAC_ALERT_MANAGER_CONFIG 
+          dest: *alertmanager_config_file_ref
+      ca:
+        client:
+          ca_server: *ca_server_ref
+          subject_alt_names:
+            - "DNS:minio1.pac-dev.com"
+            - "DNS:pac-server1.pac-dev.com"
+      docker_composes:
+        - name: jasperreports
+          vars:
+            # password
+            # allow_empty_password
+            services:
+              mariadb:
+                storage_path: /mnt/storage/mariadb
+              jasperreports:
+                storage_path: /mnt/storage/jasperreports
+      docker_containers:
+        - *alert_manager_docker_ref
+        - *node_exporter_docker_ref
+        - *grafana_docker_ref
+        - *prometheus_docker_ref
+        - *minio_docker_ref
+    - ip: *pac_server2_ip_ref
+      hostname: *pac_server2_hostname_ref
+      username: *pac_user_ref
+      cloud_init: *cloud_init_ref
+      specs: *minio_server_specs_ref
+      ca:
+        client:
+          ca_server: *ca_server_ref
+          subject_alt_names:
+            - "DNS:minio2.pac-dev.com"
+            - "DNS:pac-server2.pac-dev.com"
+      docker_containers:
+        - *node_exporter_docker_ref
+        - *cockroachdb_docker_ref
+        - *minio_docker_ref
+    - ip: *pac_server3_ip_ref
+      hostname: *pac_server3_hostname_ref
+      username: *pac_user_ref
+      cloud_init: *cloud_init_ref
+      specs: *minio_server_specs_ref
+      ca:
+        client:
+          ca_server: *ca_server_ref
+          subject_alt_names:
+            - "DNS:minio3.pac-dev.com"
+            - "DNS:pac-server3.pac-dev.com"
+      docker_containers:
+        - *node_exporter_docker_ref
+        - *cockroachdb_docker_ref
+        - *minio_docker_ref
+    - ip: *pac_server4_ip_ref
+      hostname: *pac_server4_hostname_ref
+      username: *pac_user_ref
+      cloud_init: *cloud_init_ref
+      specs: *minio_server_specs_ref
+      ca:
+        client:
+          ca_server: *ca_server_ref
+          subject_alt_names:
+            - "DNS:minio4.pac-dev.com"
+            - "DNS:pac-server4.pac-dev.com"
+      docker_containers:
+        - *node_exporter_docker_ref
+        - *cockroachdb_docker_ref
+        - *minio_docker_ref

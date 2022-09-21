@@ -1,0 +1,121 @@
+---
+- name: Local Deploy
+  hosts: localhost
+  gather_facts: true
+
+  tasks:
+    - name: Import config vars from file
+      include_vars:
+        name: file_vars
+        file: "{{ import_file }}"
+
+    - name: Gather the package facts
+      package_facts:
+        manager: auto
+
+    - name: Get current user on localhost
+      set_fact:
+        current_user: "{{ lookup('env', 'USER') }}"
+
+    - name: Localhost root block
+      become: true
+      block:
+        - name: Set local deploy facts
+          set_fact:
+            terraform_droplets: []
+            setup_droplets: []
+
+        - name: Loop through droplets
+          loop: "{{ file_vars.config.droplets }}"
+          vars:
+            terraform_droplet:
+              ip: "{{ item.ip }}"
+              hostname: "{{ item.hostname }}"
+              cloud_init: "{{ item.cloud_init }}"
+              specs:
+                cpus: "{{ item.specs.cpus }}"
+                memory: "{{ item.specs.memory }}"
+                disks: "{{ item.specs.disks | default([{'name': '', 'path': '', 'size': 0}]) }}"
+            setup_droplet:
+              ip: "{{ item.ip }}"
+              user: "{{ item.user }}"
+              docker_containers: "{{ item.docker_containers | default([]) }}"
+              docker_composes: "{{ item.docker_composes | default([]) }}"
+          set_fact:
+            terraform_droplets: "{{ terraform_droplets + [terraform_droplet] }}"
+            setup_droplets: "{{ setup_droplets + [setup_droplet] }}"
+
+        - name: Set terraform facts
+          set_fact:
+            tf_local_vars:
+              terraform: "{{ file_vars.config.terraform | default({}) }}"
+              droplets: "{{ terraform_droplets }}"
+
+        - name: Run terraform preflight
+          import_role:
+            name: traviss25.pac.terraform
+            tasks_from: local_preflight
+          vars:
+            local_vars: "{{ tf_local_vars }}"
+
+        # - name: Run droplet preflight
+        #   loop: "{{ setup_droplets }}"
+        #   delegate_to: "{{ item.ip }}"
+        #   become: true
+        #   remote_user: "{{ item.username }}"
+        #   include_role:
+        #     name: droplet
+        #     tasks_from: local
+        #   vars:
+        #     preflight: true
+        #     droplet: "{{ item }}"
+
+        # - name: Install terraform
+        #   when: ansible_facts.packages['terraform'] | length == 0
+        #   import_role:
+        #     name: traviss25.util.hashicorp
+        #     tasks_from: install
+        #   vars:
+        #     package: terraform
+
+        # - name: Install snap
+        #   when: ansible_facts.packages['snapd'] | length == 0
+        #   apt:
+        #     update_cache: yes
+        #     pkg:
+        #       - snapd
+
+        # - name: Check if lxd installed by snap
+        #   ignore_errors: true
+        #   shell: snap list | grep blah
+        #   register: snap_output
+
+        # - name: Install lxd
+        #   when: snap_output.stdout_lines | length == 0
+        #   import_role:
+        #     name: traviss25.util.lxd
+        #     tasks_from: install
+        #   vars:
+        #     users:
+        #       - "{{ current_user }}"
+          
+        # - name: Run terraform
+        #   import_role:
+        #     name: terraform
+        #   vars:
+        #     local_vars: "{{ tf_local_vars }}"
+
+        # - name: Run droplet
+        #   loop: "{{ setup_droplets }}"
+        #   delegate_to: "{{ item.ip }}"
+        #   become: true
+        #   remote_user: "{{ item.username }}"
+        #   include_role:
+        #     name: droplet
+        #     tasks_from: local
+        #   vars:
+        #     preflight: true
+        #     droplet: "{{ item }}"
+      
+
+

@@ -1,13 +1,22 @@
 ---
+install_options: &install_options_ref
+  users:
+    type: list
+    elements: str
+    description: List of users to add to lxd group
+  preseed_file:
+    type: str
+    description: |
+      Absolute path to YAML config file to use to preseed lxd setup.
+      If not set, will start daemon with --init flag
 
 argument_specs:
-  main:
+  install:
     description: |
       Main entry into setting up lxd.  
       User running this role must have sudo privileges
-    options:
-      preseed_file:
-        type: str
-        description: |
-          Absolute path to YAML config file to use to preseed lxd setup.
-          If not set, will use default settings
+    options: *install_options_ref
+
+  install_preflight:
+    description: Install preflight
+    options: *install_options_ref

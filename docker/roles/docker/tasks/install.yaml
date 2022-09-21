@@ -9,7 +9,7 @@
 
 - name: Install docker and deps
   become: true
-  when: "{{ ansible_facts.packages['docker-ce'] | length == 0 }}"
+  when: ansible_facts.packages['docker-ce'] | length == 0
   block:
     - name: Install package dependencies
       apt:
@@ -51,10 +51,11 @@
       shell:
         cmd: groupadd docker
 
-    - name: Add user to docker group
-      when: username is defined
-      shell:
-        cmd: usermod -aG docker "{{ username }}"
+    - name: Add user(s) to docker group
+      loop: "{{ users | default([]) }}"
+      user:
+        name: "{{ item }}"
+        groups: docker
 
 - name: Docker already installed
   when: "{{ ansible_facts.packages['docker-ce'] | length > 0 }}"

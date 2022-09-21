@@ -1,0 +1,30 @@
+---
+- name: Set alert manager facts
+  set_fact:
+    alertmanager_params: &alertmanager_params_ref
+      name: alertmanager
+      image: prom/alertmanager:v0.24.0
+      hostname: alertmanager
+      restart_policy: always
+      publish_all_ports: yes
+      mounts:
+        - source: "{{ vars.config_file }}"
+          target: /etc/alertmanager/alertmanager.yml
+
+- name: Start container
+  when: vars.action == 'start'
+  community.docker.docker_container:
+    <<: *alertmanager_params_ref
+
+- name: Restart container
+  when: vars.action == 'restart'
+  community.docker.docker_container:
+    state: started
+    restart: yes
+    <<: *alertmanager_params_ref
+
+- name: Stop container
+  when: vars.action == 'stop'
+  community.docker.docker_container:
+    state: stopped
+    <<: *alertmanager_params_ref

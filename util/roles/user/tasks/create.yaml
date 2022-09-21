@@ -1,7 +1,0 @@
-- name: Create user
-  user:
-    name: "{{ username }}"
-    password: "{{ password }}"
-    generate_ssh_key: yes
-    ssh_key_bits: 2048
-    groups: "{{ groups }}"

@@ -1,0 +1,3 @@
+---
+main_defaults:
+  preflight: true

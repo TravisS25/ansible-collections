@@ -1,3 +1,0 @@
----
-droplet_docker_container_defaults:
-  from_collection: false

@@ -81,66 +81,17 @@ corefile_options: &corefile_options_ref
             elements: dict
             description: Recursive list of this dict
 
-main_run_options: &main_run_options_ref
-  container_params:
-    type: dict
-    description: Dict of parameters for coredns container
-    default:
-      command:
-        - "-conf=/etc/coredns/Corefile"
-  container_action:
-    type: str
-    choices:
-      - start
-      - restart
-      - stop
-    default: start
-    description: Docker action to apply to coredns container
-  container_name:
-    type: str
-    default: coredns
-    description: Container name of coredns docker container
-  coredns_version:
-    type: str
-    default: 1.9.3
-    description: Version of coredns to download
-
-run_options: &run_options_ref
-  <<: *main_run_options_ref
-  corefile_path:
-    type: str
-    default: /etc/coredns/Corefile
-    description: Absolute file path to Corefile
-
 main_options: &main_options_ref
-  server:
+  corefile:
     type: dict
-    description: Sets up dns server on current droplet
-    options:
-      <<: *main_run_options_ref
-      corefile:
-        type: dict
-        required: true
-        description: Object settings for corefile
-        options: *corefile_options_ref
-      hosts:
-        type: list
-        elements: dict
-        description: List of host object settings to generate host files
-        options: *host_file_options_ref
-  client:
-    type: dict
-    description: Sets up droplet to connect to dns server
-    options:
-      dns_server:
-        type: dict
-        required: true
-        description: DNS server settings for current droplet
-        options:
-          ip:
-            type: str
-            required: true
-            description: IP address of DNS server
+    required: true
+    description: Object settings for corefile
+    options: *corefile_options_ref
+  hosts:
+    type: list
+    elements: dict
+    description: List of host object settings to generate host files
+    options: *host_file_options_ref
 
 argument_specs:
   main:
@@ -150,14 +101,6 @@ argument_specs:
   main_preflight:
     short_description: Main prelight
     options: *main_options_ref
-
-  run:
-    description: Run requirements and run dns server
-    options: *run_options_ref
-
-  run_preflight:
-    short_description: Run preflight
-    options: *run_options_ref
 
   host_file:
     description: Creates host format file for Corefile to use

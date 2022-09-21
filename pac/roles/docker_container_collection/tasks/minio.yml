@@ -1,0 +1,58 @@
+---
+- name: Set mount facts
+  set_fact:
+    minio_mounts: []
+
+- name: Single mode facts
+  when: vars.distributed_mode is not defined
+  set_fact:
+    minio_command: "server {{ vars.protocol }}://{{ vars.hostname }}/data --console-address ':9001'"
+    minio_mounts: "{{ minio_mounts + [combine({'source': storage_path, 'target': '/data'})] }}"
+
+- name: Distributed mode block
+  when: vars.distributed_mode is defined
+  block:
+    - name: Distributed mode facts
+      set_fact:
+        minio_command: |
+          server {{ vars.protocol }}://{{ vars.hostname }}{1...{{ vars.distributed_mode.num_of_hosts }}}/data{1...{{ vars.distributed_mode.num_of_drives }}} \
+          --console-address ':9001'
+
+    - name: Loop storage paths
+      loop: "{{ range(1, vars.distributed_mode.num_of_drives + 1) }}"
+      loop_control:
+        index_var: idx
+      vars:
+        new_source: "{{ storage_path }}{{ idx + 1 }}"
+        new_target: "/data{{ idx + 1 }}"
+      set_fact:
+        minio_mounts: "{{ minio_mounts + [combine({'source': new_source, 'target', new_target})] }}"
+
+- name: Set minio container param facts
+  set_fact:
+    minio_params: &minio_params_ref
+      name: minio
+      hostname: minio
+      image: minio/minio:RELEASE.2022-06-11T19-55-32Z
+      restart_policy: always
+      publish_all_ports: yes
+      command: "{{ minio_command }}"
+      mounts: "{{ minio_mounts }}"
+
+- name: Start container
+  when: vars.action == 'start'
+  community.docker.docker_container:
+    <<: *minio_params_ref
+
+- name: Restart container
+  when: vars.action == 'restart'
+  community.docker.docker_container:
+    state: started
+    restart: yes
+    <<: *minio_params_ref
+
+- name: Stop container
+  when: vars.action == 'stop'
+  community.docker.docker_container:
+    state: stopped
+    <<: *minio_params_ref 
