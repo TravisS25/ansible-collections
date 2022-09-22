@@ -18,14 +18,13 @@
         current_user: "{{ lookup('env', 'USER') }}"
 
     - name: Localhost root block
-      become: true
       block:
         - name: Set local deploy facts
           set_fact:
             terraform_droplets: []
             setup_droplets: []
 
-        - name: Loop through droplets
+        - name: Loop through droplets and set facts
           loop: "{{ file_vars.config.droplets }}"
           vars:
             terraform_droplet:
@@ -54,50 +53,47 @@
         - name: Run terraform preflight
           import_role:
             name: traviss25.pac.terraform
-            tasks_from: local_preflight
+            tasks_from: main_preflight
           vars:
             local_vars: "{{ tf_local_vars }}"
 
-        # - name: Run droplet preflight
-        #   loop: "{{ setup_droplets }}"
-        #   delegate_to: "{{ item.ip }}"
-        #   become: true
-        #   remote_user: "{{ item.username }}"
-        #   include_role:
-        #     name: droplet
-        #     tasks_from: local
-        #   vars:
-        #     preflight: true
-        #     droplet: "{{ item }}"
+        - name: Run droplet preflight
+          loop: "{{ setup_droplets }}"
+          include_role:
+            name: droplet
+            tasks_from: local
+          vars:
+            preflight: true
+            droplet: "{{ item }}"
 
-        # - name: Install terraform
-        #   when: ansible_facts.packages['terraform'] | length == 0
-        #   import_role:
-        #     name: traviss25.util.hashicorp
-        #     tasks_from: install
-        #   vars:
-        #     package: terraform
+        - name: Install terraform
+          when: ansible_facts.packages['terraform'] | length == 0
+          import_role:
+            name: traviss25.util.hashicorp
+            tasks_from: install
+          vars:
+            package: terraform
 
-        # - name: Install snap
-        #   when: ansible_facts.packages['snapd'] | length == 0
-        #   apt:
-        #     update_cache: yes
-        #     pkg:
-        #       - snapd
+        - name: Install snap
+          when: ansible_facts.packages['snapd'] | length == 0
+          apt:
+            update_cache: yes
+            pkg:
+              - snapd
 
-        # - name: Check if lxd installed by snap
-        #   ignore_errors: true
-        #   shell: snap list | grep blah
-        #   register: snap_output
+        - name: Check if lxd installed by snap
+          ignore_errors: true
+          shell: snap list | grep blah
+          register: snap_output
 
-        # - name: Install lxd
-        #   when: snap_output.stdout_lines | length == 0
-        #   import_role:
-        #     name: traviss25.util.lxd
-        #     tasks_from: install
-        #   vars:
-        #     users:
-        #       - "{{ current_user }}"
+        - name: Install lxd
+          when: snap_output.stdout_lines | length == 0
+          import_role:
+            name: traviss25.util.lxd
+            tasks_from: install
+          vars:
+            users:
+              - "{{ current_user }}"
           
         # - name: Run terraform
         #   import_role:
@@ -106,10 +102,6 @@
         #     local_vars: "{{ tf_local_vars }}"
 
         # - name: Run droplet
-        #   loop: "{{ setup_droplets }}"
-        #   delegate_to: "{{ item.ip }}"
-        #   become: true
-        #   remote_user: "{{ item.username }}"
         #   include_role:
         #     name: droplet
         #     tasks_from: local

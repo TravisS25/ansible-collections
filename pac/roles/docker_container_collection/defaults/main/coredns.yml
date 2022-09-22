@@ -1,0 +1,2 @@
+coredns_defaults:
+  config_file: /etc/coredns/Corefile

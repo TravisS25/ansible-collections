@@ -32,41 +32,50 @@ ca_server: &ca_server_ref
 
 coredns_docker: &coredns_docker_ref
   name: coredns
-  vars:
+  items:
+    action: start
     config_file: *coredns_config_file_ref
 
 minio_docker: &minio_docker_ref
   name: minio
   vars:
+    action: start
     storage_path: /mnt/minio
 
 node_exporter_docker: &node_exporter_docker_ref
   name: node_exporter
   vars:
+    action: start
     storage_path: /mnt/storage/node_exporter
 
 grafana_docker: &grafana_docker_ref
   name: grafana
   vars:
+    action: start
     storage_path: /mnt/storage/grafana
 
 prometheus_docker: &prometheus_docker_ref
   name: prometheus
   vars:
+    action: start
     storage_path: /mnt/storage/promethues
 
 cockroachdb_docker: &cockroachdb_docker_ref
   name: cockroachdb
   vars:
+    action: start
     storage_path: /mnt/storage/cockroachdb
 
 alertmanager_docker: &alert_manager_docker_ref
   name: alertmanager
   vars:
+    action: start
     config_file: *alertmanager_config_file_ref
 
 redis_docker: &redis_docker_ref
   name: redis
+  vars:
+    action: start
 
 specs: &specs_ref
   memory: 2048
@@ -123,14 +132,14 @@ config:
   droplets:
     - ip: *ca_server_ip_ref
       hostname: *ca_server_hostname_ref
-      username: *pac_user_ref
+      user: *pac_user_ref
       cloud_init: *cloud_init_ref
       specs: *specs_ref
       ca:
         server: {}
     - ip: *dns_server_ip_ref
       hostname: *dns_server_hostname_ref
-      username: *pac_user_ref
+      user: *pac_user_ref
       cloud_init: *cloud_init_ref
       specs: *specs_ref
       dns:
@@ -182,7 +191,7 @@ config:
         - *coredns_docker_ref
     - ip: *pac_server1_ip_ref
       hostname: *pac_server1_hostname_ref
-      username: *pac_user_ref
+      user: *pac_user_ref
       cloud_init: *cloud_init_ref
       specs: *minio_server_specs_ref
       transfer:
@@ -212,7 +221,7 @@ config:
         - *minio_docker_ref
     - ip: *pac_server2_ip_ref
       hostname: *pac_server2_hostname_ref
-      username: *pac_user_ref
+      user: *pac_user_ref
       cloud_init: *cloud_init_ref
       specs: *minio_server_specs_ref
       ca:
@@ -227,7 +236,7 @@ config:
         - *minio_docker_ref
     - ip: *pac_server3_ip_ref
       hostname: *pac_server3_hostname_ref
-      username: *pac_user_ref
+      user: *pac_user_ref
       cloud_init: *cloud_init_ref
       specs: *minio_server_specs_ref
       ca:
@@ -242,7 +251,7 @@ config:
         - *minio_docker_ref
     - ip: *pac_server4_ip_ref
       hostname: *pac_server4_hostname_ref
-      username: *pac_user_ref
+      user: *pac_user_ref
       cloud_init: *cloud_init_ref
       specs: *minio_server_specs_ref
       ca:

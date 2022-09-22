@@ -5,62 +5,73 @@
 # This task simply has a bool flag to indicate whether we are running
 # in preflight mode or actually executing tasks
 
-- name: Set setup facts
-  set_fact:
-    ca_server_task: "{% if preflight %}server_preflight{% else %}server{% endif %}"
-    ca_client_task: "{% if preflight %}client_preflight{% else %}client{% endif %}"
-    docker_install_task: "{% if preflight %}install_preflight{% else %}install{% endif %}"
-    dns_task: "{% if preflight %}main_preflight{% endif %}main{% endif %}"
+- name: Main block
+  become: true
+  delegate_to: "{{ droplet.ip }}"
+  remote_user: "{{ droplet.user }}"
+  block:
+    - name: "{% if preflight %}CA server preflight{% else %}Run ca server{% endif %}"
+      when: droplet.ca is defined and droplet.ca.server is defined
+      import_role:
+        name: traviss25.dev.ca
+        tasks_from: "{% if preflight %}server_preflight{% else %}server{% endif %}"
+      vars:
+        cert: "{{ droplet.ca.server.cert | default({}) }}"
+        key: "{{ droplet.ca.server.key | default({}) }}"
 
-- name: CA server preflight
-  when: droplet.ca is defined and droplet.ca.server is defined
-  import_role:
-    name: traviss25.dev.ca
-    tasks_from: "{{ ca_server_task }}"
-  vars:
-    cert: "{{ droplet.ca.server.cert | default({}) }}"
-    key: "{{ droplet.ca.server.key | default({}) }}"
+    - name: "{% if preflight %}CA client preflight{% else %}Run ca client{% endif %}"
+      when: droplet.ca is defined and droplet.ca.client is defined
+      include_role:
+        name: traviss25.dev.ca
+        tasks_from: "{% if preflight %}client_preflight{% else %}client{% endif %}"
+      vars:
+        cert: "{{ droplet.ca.client.cert | default({}) }}"
+        key: "{{ droplet.ca.client.key | default({}) }}"
+        subject_alt_names: "{{ droplet.ca.client.subject_alt_names }}"
+        ca_server:
+          ip: "{{ droplet.ca.client.ca_server.ip }}"
 
-- name: CA client preflight
-  when: droplet.ca is defined and droplet.ca.client is defined
-  include_role:
-    name: traviss25.dev.ca
-    tasks_from: "{{ ca_server_task }}"
-  vars:
-    cert: "{{ droplet.ca.client.cert | default({}) }}"
-    key: "{{ droplet.ca.client.key | default({}) }}"
-    subject_alt_names: "{{ droplet.ca.client.subject_alt_names }}"
-    ca_server:
-      ip: "{{ droplet.ca.client.ca_server.ip }}"
+    # - name: "{% if preflight %}DNS preflight{% else %}Run dns server{% endif %}"
+    #   when: droplet.dns is defined
+    #   import_role:
+    #     name: traviss25.dev.dns
+    #     tasks_from: "{% if preflight %}main_preflight{% else %}main{% endif %}"
+    #   vars:
+    #     corefile: "{{ droplet.dns.corefile }}"
 
-- name: Import docker install role
-  when: droplet.dns is defined
-  import_role:
-    name: traviss25.docker.docker
-    tasks_from: "{{ dns_task }}"
-  vars:
-    corefile: "{{ droplet.dns.corefile }}"
+    - name: "{% if preflight %}Docker install preflight{% else %}Run docker install{% endif %}"
+      import_role:
+        name: traviss25.docker.docker
+        tasks_from: "{% if preflight %}install_preflight{% else %}install{% endif %}"
+      vars:
+        users: 
+          - "{{ droplet.user }}"
 
-- name: Import docker install role
-  import_role:
-    name: traviss25.docker.docker
-    tasks_from: "{{ docker_install_task }}"
-  vars:
-    users: 
-      - "{{ droplet.user }}"
+    - name: Debug container here!!!!!
+      loop: "{{ droplet.docker_containers }}"
+      loop_control:
+        loop_var: docker_container
+      debug:
+        msg: "{{ docker_container }}"
 
-- name: Import docker container task
-  loop: "{{ droplet.docker_containers }}"
-  include_role:
-    name: traviss25.pac.docker_container_collection
-    tasks_from: "{{ item.name }}"
-  vars:
-    vars: "{{ item.vars }}"
 
-- name: Import docker compose task
-  loop: "{{ droplet.docker_composes | default([]) }}"
-  include_role:
-    name: traviss25.docker.docker
-    tasks_from: "{{ item.name }}"
-  vars:
-    vars: "{{ item.vars }}"
+    - name: "{% if preflight %}Docker container preflight{% else %}Run docker container{% endif %}"
+      loop: "{{ droplet.docker_containers }}"
+      loop_control:
+        loop_var: docker_container
+      include_role:
+        name: traviss25.pac.docker_container_collection
+        tasks_from: "{% if preflight %}{{ docker_container.name }}_preflight{% else %}{{ docker_container.name }}{% endif %}"
+      vars:
+        #vars: "{{ docker_container.vars }}"
+        items: "{{ docker_container.items }}"
+
+    - name: "{% if preflight %}Docker compose preflight{% else %}Run docker compose{% endif %}"
+      loop: "{{ droplet.docker_composes | default([]) }}"
+      loop_control:
+        loop_var: docker_compose
+      include_role:
+        name: traviss25.pac.docker_compose_collection
+        tasks_from: "{% if preflight %}{{ docker_compose.name }}_preflight{% else %}{{ docker_compose.name }}{% endif %}"
+      vars:
+        vars: "{{ docker_compose.vars }}"

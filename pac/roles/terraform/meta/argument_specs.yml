@@ -1,6 +1,6 @@
 ---
 
-local_options: &local_options_ref
+main_options: &main_options_ref
   state:
     type: str
     default: present
@@ -158,12 +158,12 @@ local_options: &local_options_ref
                     description: Size of disk in GBs
 
 argument_specs:
-  local:
+  main:
     description: Local entry into setting up terraform
-    options: *local_options_ref
+    options: *main_options_ref
   
-  local_preflight:
+  main_preflight:
     description: Preflight for local
-    options: *local_options_ref
+    options: *main_options_ref
       
         

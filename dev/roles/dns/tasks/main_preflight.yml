@@ -1,4 +1,1 @@
 ---
-- name: Assert that either client or server object is set
-  assert:
-    that: client is defined or server is defined

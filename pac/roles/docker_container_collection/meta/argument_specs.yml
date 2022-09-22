@@ -30,7 +30,7 @@ alertmanager_options: &alertmanager_options_ref
       <<: [*docker_container_options_ref, *config_file_options_ref]
 
 coredns_options: &coredns_options_ref
-  vars:
+  items:
     type: dict
     required: true
     description: Generic vars for coredns
@@ -125,6 +125,19 @@ argument_specs:
   alertmanager_preflight:
     short_description: Alertmanager preflight
     options: *alertmanager_options_ref
+
+  coredns:
+    short_description: Docker container actions for coredns
+    options: *coredns_options_ref
+
+  # coredns_preflight:
+  #   short_description: Coredns preflight
+  #   options:
+  #     vars:
+  #       type: dict
+  #       required: true
+  #       options:
+  #         <<: [*docker_container_options_ref, *config_file_options_ref]
 
   cockroachdb:
     short_description: Docker container actions for cockroachdb

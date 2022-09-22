@@ -24,9 +24,11 @@ local_options: &local_options_ref
       dns:
         type: dict
       docker_containers:
-        type: dict
+        type: list
+        elements: dict
       docker_composes:
-        type: dict
+        type: list
+        elements: dict
 
 argument_specs:
   local:
