@@ -11,6 +11,12 @@ config_file_options: &config_file_options_ref
     required: true
     description: Absolute path to main config file on host
 
+config_dir_options: &config_dir_options_ref
+  config_dir:
+    type: str
+    required: true
+    description: Absolute path to root dir where multiple config files reside
+
 docker_container_options: &docker_container_options_ref
   action:
     type: str
@@ -22,7 +28,7 @@ docker_container_options: &docker_container_options_ref
       - restart
 
 alertmanager_options: &alertmanager_options_ref
-  vars:
+  root_var:
     type: dict
     required: true
     description: Generic vars for alert manager
@@ -30,7 +36,7 @@ alertmanager_options: &alertmanager_options_ref
       <<: [*docker_container_options_ref, *config_file_options_ref]
 
 coredns_options: &coredns_options_ref
-  items:
+  root_var:
     type: dict
     required: true
     description: Generic vars for coredns
@@ -38,7 +44,7 @@ coredns_options: &coredns_options_ref
       <<: [*docker_container_options_ref, *config_file_options_ref]
 
 cockroachdb_options: &cockroachdb_options_ref
-  vars:
+  root_var:
     type: dict
     required: true
     description: Generic vars for cockroachdb
@@ -54,8 +60,38 @@ cockroachdb_options: &cockroachdb_options_ref
         description: Command line arguments to use against container to init cluster
       <<: [*docker_container_options_ref, *storage_path_options_ref]
 
+cockroachdb_certs_options: &cockroachdb_certs_options_ref
+  root_var:
+    type: dict
+    required: true
+    description: Generic vars for cockroachdb cert creation
+    options:
+      ca:
+        type: dict
+        description: Settings for cockroach node that generate CA
+        options:
+          cert_dir:
+            type: str
+            default: /etc/cockroachdb/ca/certs
+            description: Root directory to store cockroachdb certs
+          key_dir:
+            type: str
+            default: /etc/cockroachdb/ca/key
+            description: Root directory to store cockroachdb key
+          overwrite_ca_if_exists:
+            type: bool
+            default: false
+            description: Determines whether to overwrite ca if one is already generated
+      client:
+
+      hosts:
+        type: list
+        required: true
+        elements: str
+        description: List of FQDNs or IPs that will be connected to cockroach cluster
+
 minio_options: &minio_options_ref
-  vars:
+  root_var:
     type: dict
     required: true
     description: Generic vars for minio
@@ -86,31 +122,31 @@ minio_options: &minio_options_ref
             description: Number of hosts apart of cluster
 
 node_exporter_options: &node_exporter_options_ref
-  vars:
+  root_var:
     type: dict
     required: true
     description: Generic vars for node exporter
     options:
-      <<: *docker_container_options_ref
+      <<: [*docker_container_options_ref, *storage_path_options_ref]
 
 prometheus_options: &prometheus_options_ref
-  vars:
+  root_var:
     type: dict
     required: true
     description: Generic vars for prometheus
     options:
-      <<: *docker_container_options_ref
+      <<: [*docker_container_options_ref, *storage_path_options_ref, *config_dir_options_ref]
 
 grafana_options: &grafana_options_ref
-  vars:
+  root_var:
     type: dict
     required: true
     description: Generic vars for grafana
     options:
-      <<: *docker_container_options_ref
+      <<: [*docker_container_options_ref, *storage_path_options_ref]
 
 redis_options: &redis_options_ref
-  vars:
+  root_var:
     type: dict
     required: true
     description: Generic vars for redis
@@ -130,14 +166,9 @@ argument_specs:
     short_description: Docker container actions for coredns
     options: *coredns_options_ref
 
-  # coredns_preflight:
-  #   short_description: Coredns preflight
-  #   options:
-  #     vars:
-  #       type: dict
-  #       required: true
-  #       options:
-  #         <<: [*docker_container_options_ref, *config_file_options_ref]
+  coredns_preflight:
+    short_description: Coredns preflight
+    options: *coredns_options_ref
 
   cockroachdb:
     short_description: Docker container actions for cockroachdb

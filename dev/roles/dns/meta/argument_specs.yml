@@ -99,7 +99,7 @@ argument_specs:
     options: *main_options_ref
 
   main_preflight:
-    short_description: Main prelight
+    short_description: Main prelight for dns
     options: *main_options_ref
 
   host_file:
@@ -107,7 +107,7 @@ argument_specs:
     options: *host_file_options_ref
 
   host_file_preflight:
-    description: Asserts host file parameters
+    description: Host file preflight for dns
     options: *host_file_options_ref
 
   corefile:
@@ -115,5 +115,5 @@ argument_specs:
     options: *corefile_options_ref
 
   corefile_preflight:
-    description: Asserts corefile parameters
+    description: Corefile preflight for dns
     options: *corefile_options_ref

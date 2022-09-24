@@ -31,13 +31,13 @@
         ca_server:
           ip: "{{ droplet.ca.client.ca_server.ip }}"
 
-    # - name: "{% if preflight %}DNS preflight{% else %}Run dns server{% endif %}"
-    #   when: droplet.dns is defined
-    #   import_role:
-    #     name: traviss25.dev.dns
-    #     tasks_from: "{% if preflight %}main_preflight{% else %}main{% endif %}"
-    #   vars:
-    #     corefile: "{{ droplet.dns.corefile }}"
+    - name: "{% if preflight %}DNS preflight{% else %}Run dns server{% endif %}"
+      when: droplet.dns is defined
+      import_role:
+        name: traviss25.dev.dns
+        tasks_from: "{% if preflight %}main_preflight{% else %}main{% endif %}"
+      vars:
+        corefile: "{{ droplet.dns.corefile }}"
 
     - name: "{% if preflight %}Docker install preflight{% else %}Run docker install{% endif %}"
       import_role:
@@ -47,12 +47,24 @@
         users: 
           - "{{ droplet.user }}"
 
-    - name: Debug container here!!!!!
-      loop: "{{ droplet.docker_containers }}"
+    - name: Transfer files to remote server
+      when: droplet.transfers is defined
+      loop: "{{ droplet.transfers }}"
       loop_control:
-        loop_var: docker_container
-      debug:
-        msg: "{{ docker_container }}"
+        loop_var: file
+      delegate_to: "{{ droplet.ip }}"
+      become: true
+      remote_user: "{{ droplet.user }}"
+      copy:
+        src: "{{ lookup('env', file.source_env_var) }}"
+        dest: "{{ file.dest }}"
+
+    # - name: Debug container here!!!!!
+    #   loop: "{{ droplet.docker_containers }}"
+    #   loop_control:
+    #     loop_var: docker_container
+    #   debug:
+    #     msg: "{{ docker_container }}"
 
 
     - name: "{% if preflight %}Docker container preflight{% else %}Run docker container{% endif %}"
@@ -63,8 +75,7 @@
         name: traviss25.pac.docker_container_collection
         tasks_from: "{% if preflight %}{{ docker_container.name }}_preflight{% else %}{{ docker_container.name }}{% endif %}"
       vars:
-        #vars: "{{ docker_container.vars }}"
-        items: "{{ docker_container.items }}"
+        root_var: "{{ docker_container.root_var }}"
 
     - name: "{% if preflight %}Docker compose preflight{% else %}Run docker compose{% endif %}"
       loop: "{{ droplet.docker_composes | default([]) }}"
@@ -74,4 +85,4 @@
         name: traviss25.pac.docker_compose_collection
         tasks_from: "{% if preflight %}{{ docker_compose.name }}_preflight{% else %}{{ docker_compose.name }}{% endif %}"
       vars:
-        vars: "{{ docker_compose.vars }}"
+        root_var: "{{ docker_compose.root_var }}"

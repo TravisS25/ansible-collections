@@ -20,19 +20,19 @@
           target: /rootfs:ro
 
 - name: Start container
-  when: vars.action == 'start'
+  when: root_var.action == 'start'
   community.docker.docker_container:
     <<: *node_exporter_params_ref
 
 - name: Restart container
-  when: vars.action == 'restart'
+  when: root_var.action == 'restart'
   community.docker.docker_container:
     state: started
     restart: yes
     <<: *node_exporter_params_ref
 
 - name: Stop container
-  when: vars.action == 'stop'
+  when: root_var.action == 'stop'
   community.docker.docker_container:
     state: stopped
     <<: *node_exporter_params_ref

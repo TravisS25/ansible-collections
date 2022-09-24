@@ -1,6 +1,6 @@
 ---
 - name: Assert password set when allow empty password false
-  when: not vars.allow_empty_password
+  when: root_var.allow_empty_password != true
   assert:
-    that: vars.password is defined
-    fail_msg: "password" variable must be set when "allow_empty_password" is false
+    that: root_var.password is defined
+    fail_msg: password variable must be set when allow_empty_password is false

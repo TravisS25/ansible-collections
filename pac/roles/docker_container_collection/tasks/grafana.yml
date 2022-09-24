@@ -2,7 +2,7 @@
 - name: Create grafana storage path
   file:
     state: directory
-    path: "{{ vars.storage_path }}"
+    path: "{{ root_var.storage_path }}"
 
 - name: Set grafana container facts
   set_fact:
@@ -13,23 +13,23 @@
       restart_policy: always
       publish_all_ports: yes
       mounts:
-        - source: "{{ vars.storage_path }}"
+        - source: "{{ root_var.storage_path }}"
           target: /var/lib/grafana
 
 - name: Start container
-  when: vars.action == 'start'
+  when: root_var.action == 'start'
   community.docker.docker_container:
     <<: *grafana_params_ref
 
 - name: Restart container
-  when: vars.action == 'restart'
+  when: root_var.action == 'restart'
   community.docker.docker_container:
     state: started
     restart: yes
     <<: *grafana_params_ref
 
 - name: Stop container
-  when: vars.action == 'stop'
+  when: root_var.action == 'stop'
   community.docker.docker_container:
     state: stopped
     <<: *grafana_params_ref

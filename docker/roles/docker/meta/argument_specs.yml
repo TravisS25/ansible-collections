@@ -88,7 +88,7 @@ argument_specs:
     options: *install_options_ref
 
   install_preflight:
-    short_description: Install preflight
+    short_description: Install docker preflight
     options: *install_options_ref
 
   image_pull:
@@ -97,7 +97,7 @@ argument_specs:
     options: *image_pull_options_ref
 
   image_pull_preflight:
-    short_description: Image preflight
+    short_description: Docker image preflight
     options: *image_pull_options_ref
 
   container:

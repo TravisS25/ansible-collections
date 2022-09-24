@@ -7,27 +7,27 @@
       services:
         mariadb:
           image: bitnami/mariadb:10.1.47
-          ports: "{{ vars.services.mariadb.ports | default(jasperreports_defaults.services.mariadb.ports) }}"
+          ports: "{{ root_var.services.mariadb.ports | default(jasperreports_defaults.services.mariadb.ports) }}"
           volumes:
-            - "{{ vars.services.mariadb.storage_path }}":/bitnami/mariadb
+            - "{{ root_var.services.mariadb.storage_path }}":/bitnami/mariadb
           environment:
             # ALLOW_EMPTY_PASSWORD is recommended only for development.
-            - ALLOW_EMPTY_PASSWORD="{{ vars.allow_empty_password | jasperreports_defaults.allow_empty_password }}"
+            - ALLOW_EMPTY_PASSWORD="{{ root_var.allow_empty_password | jasperreports_defaults.allow_empty_password }}"
             - MARIADB_USER=bn_jasperreports
-            - MARIADB_PASSWORD="{{ vars.password | jasperreports_defaults.password }}"
+            - MARIADB_PASSWORD="{{ root_var.password | jasperreports_defaults.password }}"
             - MARIADB_DATABASE=bitnami_jasperreports
         jasperreports:
           image: bitnami/jasperreports:6.4.3
-          ports: "{{ vars.services.jasperreports.ports | default(jasperreports_defaults.services.jasperreports.ports) }}"
+          ports: "{{ root_var.services.jasperreports.ports | default(jasperreports_defaults.services.jasperreports.ports) }}"
           volumes:
-            - "{{ vars.services.jasperreports.storage_path }}:/bitnami/jasperreports"
+            - "{{ root_var.services.jasperreports.storage_path }}:/bitnami/jasperreports"
           depends_on:
             - mariadb
           environment:
             # ALLOW_EMPTY_PASSWORD is recommended only for development.
-            - ALLOW_EMPTY_PASSWORD="{{ vars.allow_empty_password | jasperreports_defaults.allow_empty_password }}"
+            - ALLOW_EMPTY_PASSWORD="{{ root_var.allow_empty_password | jasperreports_defaults.allow_empty_password }}"
             - JASPERREPORTS_DATABASE_HOST=mariadb
             - JASPERREPORTS_DATABASE_PORT_NUMBER=3306
             - JASPERREPORTS_DATABASE_USER=bn_jasperreports
-            - JASPERREPORTS_DATABASE_PASSWORD="{{ vars.password | jasperreports_defaults.password }}"
+            - JASPERREPORTS_DATABASE_PASSWORD="{{ root_var.password | jasperreports_defaults.password }}"
             - JASPERREPORTS_DATABASE_NAME=bitnami_jasperreports
