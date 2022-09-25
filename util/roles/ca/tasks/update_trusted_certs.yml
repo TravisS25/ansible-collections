@@ -1,0 +1,26 @@
+---
+- name: Set base update trusted certs facts
+  set_fact:
+    trusted_cert_dir: /usr/local/share/ca-certificates
+
+- name: Set update trusted certs facts
+  set_fact:
+    cert_full_path: "{{ (trusted_cert_dir, cert.filename) | path_join }}"
+    overwrite: "{{ cert.overwrite | default(false) }}"
+
+- name: Get cert file stats for updated trusted certs
+  stat:
+    path: "{{ cert_full_path }}"
+  register: ca_cert_results
+
+- name: Update trusted certs block
+  when: not ca_cert_results.stat.exists or overwrite
+  block:
+    - name: Write file to trusted cert directory
+      copy:
+        remote_src: true
+        content: "{{ ca_cert_content }}"
+        dest: "{{ cert_full_path }}"
+    
+    - name: Run update-ca-certificates
+      shell: update-ca-certificates

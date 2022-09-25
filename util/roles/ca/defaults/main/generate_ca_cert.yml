@@ -1,5 +1,5 @@
 ---
-ca_server_defaults:
+generate_ca_defaults:
   key:
     dir_path: /etc/ssl/ca-keys
     filename: ca.key

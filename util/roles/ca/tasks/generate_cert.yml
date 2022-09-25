@@ -1,0 +1,34 @@
+---
+- name: Set generate cert facts
+  set_fact:
+    cert_full_path: "{{ (cert.dir_path, cert.filename) | path_join }}"
+    overwrite: "{{ cert.overwrite | default(false) }}"
+
+- name: Get cert file stats
+  stat:
+    path: "{{ cert_full_path }}"
+  register: cert_results
+
+- name: Create cert directory
+  file:
+    state: directory
+    path: "{{ cert.dir_path }}"
+
+- name: Signed cert block
+  when: not cert_results.stat.exists or overwrite
+  block:
+    - name: Sign certificate with our CA
+      community.crypto.x509_certificate_pipe:
+        csr_content: "{{ csr_content }}"
+        provider: ownca
+        ownca_content: "{{ ca.cert_content }}"
+        ownca_privatekey_content: "{{ ca.private_key_content }}"
+        ownca_not_after: "{{ valid_not_after | default(sign_csr_defaults.valid_not_after) }}" # valid for one year
+        ownca_not_before: "{{ valid_not_before | default(sign_csr_defaults.valid_not_before) }}" # valid since yesterday
+      register: certificate
+
+    - name: Save cert to trusted cert directory
+      copy:
+        remote_src: true
+        content: "{{ certificate.certificate }}"
+        dest: "{{ cert_full_path }}"

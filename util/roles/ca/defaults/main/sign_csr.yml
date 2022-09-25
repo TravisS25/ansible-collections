@@ -1,0 +1,7 @@
+sign_csr_defaults:
+  register_var: signed_cert
+  valid_not_after: +365d
+  valid_not_before: -1d
+  signed_cert:
+    dir_path: /etc/ssl/certs
+    filename: signed_cert.crt

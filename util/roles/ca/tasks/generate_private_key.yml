@@ -1,0 +1,20 @@
+---
+- name: Set generate private key facts
+  set_fact:
+    private_key_full_path: "{{ (key.dir_path, key.filename) | path_join }}"
+    overwrite: "{{ key.overwrite | default(false) }}"
+
+- name: Create ssl key directory
+  file:
+    state: directory
+    path: "{{ key.dir_path }}"
+
+- name: Get private key file stats
+  stat:
+    path: "{{ private_key_full_path }}"
+  register: private_key_results
+
+- name: Create private key
+  when: not private_key_results.stat.exists or overwrite
+  community.crypto.openssl_privatekey:
+    path: "{{ private_key_full_path }}"
