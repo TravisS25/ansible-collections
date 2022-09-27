@@ -121,11 +121,6 @@ minio_server_specs: &minio_server_specs_ref
       path: *minio4_path_ref
       size: 1
 
-dns_client: &dns_client_ref
-  client:
-    dns_server:
-      ip: *dns_server_ip_ref
-
 cloud_init: &cloud_init_ref
   user_data:
     users:
