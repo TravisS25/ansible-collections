@@ -82,12 +82,7 @@ init_cockroachdb_docker: &init_cockroachdb_docker_ref
   name: cockroachdb
   root_var:
     <<: *subset_cockroachdb_docker_ref
-    init_command: init --insecure
-
-cockroachdb_certs_docker: &cockroachdb_certs_docker
-  name: cockroachdb_certs
-  root_var:
-        
+    init_command: init --insecure        
 
 alertmanager_docker: &alert_manager_docker_ref
   name: alertmanager
@@ -158,51 +153,56 @@ config:
       user: *pac_user_ref
       cloud_init: *cloud_init_ref
       specs: *specs_ref
-      dns:
-        corefile:
-          records:
-            - name: "."
-              blocks:
-                - name: whoami
-                - name: forward
-                  parameters:
-                    - "."
-                    - "8.8.8.8"
-                - name: log
-                - name: errors
-                - name: cache
-            - name: *pac_domain_ref
-              blocks:
-                - name: hosts
-                  parameters:
-                    - /etc/coredns/hosts/pacdev.com
-                    - *pac_domain_ref
-                  blocks:
-                    - name: ttl
-                      parameters:
-                        - 60
-                    - name: reload
-                      parameters:
-                        - 5
-        hosts:
-          - host_file: *pac_domain_ref
-            records:
-              - ip: *pac_server1_ip_ref
-                hostname: *pac_server1_hostname_ref
-              - ip: *pac_server1_ip_ref
-                hostname: minio1
-              - ip: *pac_server2_ip_ref
-                hostname: *pac_server2_hostname_ref
-              - ip: *pac_server2_ip_ref
-                hostname: minio2
-              - ip: *pac_server3_ip_ref
-                hostname: *pac_server3_hostname_ref
-              - ip: *pac_server3_ip_ref
-                hostname: minio3
-              - ip: *pac_server4_ip_ref
-                hostname: *pac_server4_hostname_ref
-              - ip: *pac_server4_ip_ref
-                hostname: minio4
+      transfers:
+        - source_env_var: PAC_DNS_COREFILE
+          dest: *coredns_config_file
+        - source_env_var: PAC_DNS_HOST_FILE
+          dest: coredns_config_file
+      # dns:
+      #   corefile:
+      #     records:
+      #       - name: "."
+      #         blocks:
+      #           - name: whoami
+      #           - name: forward
+      #             parameters:
+      #               - "."
+      #               - "8.8.8.8"
+      #           - name: log
+      #           - name: errors
+      #           - name: cache
+      #       - name: *pac_domain_ref
+      #         blocks:
+      #           - name: hosts
+      #             parameters:
+      #               - /etc/coredns/hosts/pacdev.com
+      #               - *pac_domain_ref
+      #             blocks:
+      #               - name: ttl
+      #                 parameters:
+      #                   - 60
+      #               - name: reload
+      #                 parameters:
+      #                   - 5
+      #   hosts:
+      #     - host_file: *pac_domain_ref
+      #       records:
+      #         - ip: *pac_server1_ip_ref
+      #           hostname: *pac_server1_hostname_ref
+      #         - ip: *pac_server1_ip_ref
+      #           hostname: minio1
+      #         - ip: *pac_server2_ip_ref
+      #           hostname: *pac_server2_hostname_ref
+      #         - ip: *pac_server2_ip_ref
+      #           hostname: minio2
+      #         - ip: *pac_server3_ip_ref
+      #           hostname: *pac_server3_hostname_ref
+      #         - ip: *pac_server3_ip_ref
+      #           hostname: minio3
+      #         - ip: *pac_server4_ip_ref
+      #           hostname: *pac_server4_hostname_ref
+      #         - ip: *pac_server4_ip_ref
+      #           hostname: minio4
       docker_containers:
         - *coredns_docker_ref
     - ip: *pac_server1_ip_ref

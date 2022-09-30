@@ -86,20 +86,33 @@
 
 - name: Terraform block
   block:
-    - name: Plan terraform
+    - name: Plan block
       when: tf_state == 'planned'
-      terraform:
-        backend_config: "{{ tf_backend_config }}"
-        provider_upgrade: true
-        force_init: true
-        init_reconfigure: true
-        plan_file: "{{ pac_tf_plan_file }}"
-        targets: "{{ tf_targets }}"
-        project_path: "{{ tf_root_path }}"
-        state: "{{ tf_state }}"
-        workspace: "{{ tf_workspace }}"
-        variables_files: "{{ tf_variable_files }}"
-    - name: Apply terraform
+      block:
+        - name: Plan terraform
+          terraform:
+            backend_config: "{{ tf_backend_config }}"
+            provider_upgrade: true
+            force_init: true
+            init_reconfigure: true
+            plan_file: "{{ pac_tf_plan_file }}"
+            targets: "{{ tf_targets }}"
+            project_path: "{{ tf_root_path }}"
+            state: "{{ tf_state }}"
+            workspace: "{{ tf_workspace }}"
+            variables_files: "{{ tf_variable_files }}"
+
+        - name: Prompt to continue terraform plan
+          pause:
+            prompt: "Do you want to continue with terraform plan? (y/n)"
+          register: tf_result
+          until: tf_result.user_input == 'y' or tf_result.user_input == 'n'
+
+        - name: Ending current play
+          when: tf_result.user_input == 'n'
+          meta: end_play
+
+    - name: Apply block
       when: tf_state == 'present'
       terraform:
         backend_config: "{{ tf_backend_config }}"
