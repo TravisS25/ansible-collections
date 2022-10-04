@@ -1,0 +1,33 @@
+---
+
+- name: Generate private key
+  import_task: generate_private_key
+  vars:
+    key: "{{ key }}"
+
+- name: Generate csr
+  import_task: generate_csr
+  vars:
+    private_key_file: "{{ (key.dir_path, key.filename) | path_join }}"
+    subject_alt_names: "{{ subject_alt_names }}"
+    csr: "{{ csr }}"
+
+- name: Get csr content
+  slurp:
+    src: "{{ (csr.dir_path, csr.filename) | path_join }}"
+  register: csr_encoded
+
+- name: Generate cert from csr
+  import_task: generate_cert
+  vars:
+    cert: "{{ cert }}"
+    ca: "{{ ca }}"
+    csr_content: "{{ csr_encoded.content | b64decode }}"
+
+- name: Update trusted certs
+  import_task: update_trusted_certs
+  vars:
+    ca_cert_content: "{{ ca.cert_content }}"
+    cert:
+      overwrite: "{{ cert.overwrite }}"
+      filename: "{{ cert.filename }}"

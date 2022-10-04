@@ -1,0 +1,12 @@
+. {
+    whoami
+    forward . 8.8.8.8
+    log
+    errors
+    cache
+    hosts /etc/coredns/hosts/pacdev.com pacdev.com {
+        ttl 60
+        reload 5
+        fallthrough
+    }
+}

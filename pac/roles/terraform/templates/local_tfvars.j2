@@ -1,43 +1,36 @@
-droplets = [
-    {% for droplet in droplets -%}
-    {
-        ip          = "{{ droplet.ip }}"
-        hostname    = "{{ droplet.hostname }}"
-        cloud_init  = {
-            user_data_file       = "{{ droplet.cloud_init.user_data_file }}"
-            network_config_file  = "{{ droplet.cloud_init.network_config_file }}"
-            vendor_data_file     = "{{ droplet.cloud_init.vendor_data_file }}"
-        }
-        specs   = {
-            cpus    = {{ droplet.specs.cpus }}
-            memory  = {{ droplet.specs.memory }}
-            disks   = [
-                {% for disk in droplet.specs.disks -%}
-                {
-                    path    = "{{ disk.path }}"
-                    name    = "{{ disk.name }}"
-                    size    = {{ disk.size }}
-                },
-                {% endfor %}
-            ]
-        }
-    },
-    {%- endfor %}
-]
-
-{% if 'storage_pool' in terraform %}
+{% if 'storage_pool' in root_var %}
 storage_pool = {
-    name    = {{ terraform.storage_pool.name }}
-    source  = {{ terraform.storage_pool.source }}
-    size    = {{ terraform.storage_pool.size }}
-    driver  = {{ terraform.storage_pool.driver }}
-    fstype  = {{ terraform.storage_pool.fstype }}
+    name    = {{ root_var.storage_pool.name }}
+    source  = {{ root_var.storage_pool.source }}
+    size    = {{ root_var.storage_pool.size }}
+    driver  = {{ root_var.storage_pool.driver }}
+    fstype  = {{ root_var.storage_pool.fstype }}
 }
 {% endif %}
 
-{% if 'network' in terraform %}
+{% if 'network' in root_var %}
 network = {
-    name        = "{{ terraform.network.name }}",
-    ipv4_cidr   = "{{ terraform.network.ipv4_cidr }}"
+    name        = "{{ root_var.network.name }}",
+    ipv4_cidr   = "{{ root_var.network.ipv4_cidr }}"
 }
+{% endif %}
+
+{% if 'dns_server_ip' in root_var %}
+dns_server_ip = "{{ root_var.dns_server_ip }}"
+{% endif %}
+
+{% if 'pac_server1_ip' in root_var %}
+pac_server1_ip = "{{ root_var.pac_server1_ip }}"
+{% endif %}
+
+{% if 'pac_server2_ip' in root_var %}
+pac_server2_ip = "{{ root_var.pac_server2_ip }}"
+{% endif %}
+
+{% if 'pac_server3_ip' in root_var %}
+pac_server3_ip = "{{ root_var.pac_server3_ip }}"
+{% endif %}
+
+{% if 'pac_server4_ip' in root_var %}
+pac_server4_ip = "{{ root_var.pac_server4_ip }}"
 {% endif %}

@@ -11,19 +11,19 @@ dns_server_ip: &dns_server_ip_ref 192.168.3.3
 dns_server_hostname: &dns_server_hostname_ref dns-server
 
 pac_server1_ip: &pac_server1_ip_ref 192.168.3.4
-pac_server1_hostname: &pac_server1_hostname_ref pac-server1
+server1_hostname: &pac_server1_hostname_ref pac-server1
 
 pac_server2_ip: &pac_server2_ip_ref 192.168.3.5
-pac_server2_hostname: &pac_server2_hostname_ref pac-server2
+server2_hostname: &pac_server2_hostname_ref pac-server2
 
 pac_server3_ip: &pac_server3_ip_ref 192.168.3.6
-pac_server3_hostname: &pac_server3_hostname_ref pac-server3
+server3_hostname: &pac_server3_hostname_ref pac-server3
 
 pac_server4_ip: &pac_server4_ip_ref 192.168.3.7
-pac_server4_hostname: &pac_server4_hostname_ref pac-server4
+server4_hostname: &pac_server4_hostname_ref pac-server4
 
-pac_user: &pac_user_ref pac-user
-pac_domain: &pac_domain_ref pacdev.com
+server_user: &pac_user_ref pac-user
+domain: &pac_domain_ref pacdev.com
 alertmanager_config_file: &alertmanager_config_file_ref /etc/alertmanager/alertmanager.yml
 prometheus_config_file: &prometheus_config_dir_ref /etc/prometheus/prometheus.yml
 coredns_config_file: &coredns_config_file_ref /etc/coredns/Corefile

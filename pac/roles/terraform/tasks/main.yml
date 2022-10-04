@@ -1,73 +1,70 @@
 ---
 - name: Set terraform facts
   set_fact:
-    updated_droplets: []
-    tf_backend_config: {}
-    tf_root_path: ''
-    tf_current_state_file: ''
-    tf_variable_files: []
-    tf_tfvars_file: "/tmp/pac_terraform.tfvars"
-    tf_targets: "{{ targets | default([]) }}"
-    tf_workspace: "{{ workspace | default(main_defaults.workspace) }}"
-    tf_state: "{{ state | default(main_defaults.state) }}"
+    #updated_droplets: []
+    pac_tf_backend_config: {}
+    pac_tf_root_path: ''
+    pac_tf_current_state_file: ''
+    pac_tf_variable_files: ["/tmp/pac_terraform.tfvars"]
+    pac_tf_targets: "{{ targets | default([]) }}"
+    pac_tf_workspace: "{{ workspace | default(main_defaults.workspace) }}"
+    pac_tf_state: "{{ state | default(main_defaults.state) }}"
     pac_tf_state_file: "{{ lookup('env', 'PAC_TF_STATE_FILE') }}"
     pac_tf_workspace_dir: "{{ lookup('env', 'PAC_TF_WORKSPACE_DIR') }}"
     pac_tf_plan_file: "/tmp/pac_terraform.tfplan"
-    network_config_file: /tmp/pac_terraform_network_config
-    user_data_file: /tmp/pac_terraform_user_data
-    vendor_data_file: /tmp/pac_terraform_vendor_data
-    ssh_file_path: "{{ lookup('env', 'SSH_FILE_PATH') }}"
+    # network_config_file: /tmp/pac_terraform_network_config
+    # user_data_file: /tmp/pac_terraform_user_data
+    # vendor_data_file: /tmp/pac_terraform_vendor_data
+    # ssh_file_path: "{{ lookup('env', 'SSH_FILE_PATH') }}"
 
-- name: Convert droplets for terraform
-  loop: "{{ local_vars.droplets }}"
-  vars:
-    tmpl_vars:
-      droplet: "{{ item }}"
-      ssh_file_content: "{{ lookup('file', ssh_file_path) }}"
-      network_config_file: "{{ network_config_file + '_' + item.hostname + '.yml' }}"
-      user_data_file: "{{ user_data_file + '_' + item.hostname + '.yml' }}"
-      vendor_data_file: "{{ vendor_data_file + '_' + item.hostname + '.yml' }}"
-  set_fact:
-    updated_droplets: "{{ updated_droplets + [lookup('template', 'convert_droplet.j2', template_vars=tmpl_vars) | from_yaml] }}"
+# - name: Convert droplets for terraform
+#   loop: "{{ local_vars.droplets }}"
+#   vars:
+#     tmpl_vars:
+#       droplet: "{{ item }}"
+#       ssh_file_content: "{{ lookup('file', ssh_file_path) }}"
+#       network_config_file: "{{ network_config_file + '_' + item.hostname + '.yml' }}"
+#       user_data_file: "{{ user_data_file + '_' + item.hostname + '.yml' }}"
+#       vendor_data_file: "{{ vendor_data_file + '_' + item.hostname + '.yml' }}"
+#   set_fact:
+#     updated_droplets: "{{ updated_droplets + [lookup('template', 'convert_droplet.j2', template_vars=tmpl_vars) | from_yaml] }}"
 
-- name: Write temp files for user data
-  loop: "{{ updated_droplets }}"
-  template:
-    src: user_data.j2
-    dest: "{{ item.cloud_init.user_data_file }}"
-  vars:
-    yaml_content: "{{ item.cloud_init.user_data }}"
+# - name: Write temp files for user data
+#   loop: "{{ updated_droplets }}"
+#   template:
+#     src: user_data.j2
+#     dest: "{{ item.cloud_init.user_data_file }}"
+#   vars:
+#     yaml_content: "{{ item.cloud_init.user_data }}"
 
-- name: Write temp files for network config
-  loop: "{{ updated_droplets }}"
-  template:
-    src: yaml.j2
-    dest: "{{ item.cloud_init.network_config_file }}"
-  vars:
-    yaml_content: "{{ item.cloud_init.network_config }}"
+# - name: Write temp files for network config
+#   loop: "{{ updated_droplets }}"
+#   template:
+#     src: yaml.j2
+#     dest: "{{ item.cloud_init.network_config_file }}"
+#   vars:
+#     yaml_content: "{{ item.cloud_init.network_config }}"
 
 - name: Local workspace block
-  when: tf_workspace == 'local'
+  when: pac_tf_workspace == 'local'
   block:
     - name: Set local workspace facts
       set_fact:
-        tf_variable_files: "{{ tf_variable_files + [tf_tfvars_file] }}"
-        tf_root_path: "{{ role_path }}/files/local"
-        tf_backend_config:
+        pac_tf_root_path: "{{ role_path }}/files/local"
+        pac_tf_backend_config:
           path: "{{ pac_tf_state_file }}"
           workspace_dir: "{{ pac_tf_workspace_dir }}"
 
     - name: Create tfvars file from template
       template:
         src: local_tfvars.j2
-        dest: "{{ tf_tfvars_file }}"
+        dest: "{{ pac_tf_variable_files[0] }}"
         mode: 0600
       vars:
-        droplets: "{{ updated_droplets }}"
-        terraform: "{{ local_vars.terraform }}"
+        root_var: "{{ local_vars.root_var }}"
 
     - name: Planning state block
-      when: tf_state == 'planned'
+      when: pac_tf_state == 'planned'
       block:
         - name: Grab backend config state file stats
           stat:
@@ -77,30 +74,39 @@
         - name: Set init state file
           when: not register_state_file.stat.exists
           set_fact:
-            tf_current_state_file: "{{ role_path }}/files/local/.terraform/terraform.tfstate"
+            pac_tf_current_state_file: "{{ role_path }}/files/local/.terraform/terraform.tfstate"
 
         - name: Set backend config state file
           when: register_state_file.stat.exists
           set_fact:
-            tf_current_state_file: "{{ pac_tf_state_file }}"
+            pac_tf_current_state_file: "{{ pac_tf_state_file }}"
 
 - name: Terraform block
   block:
     - name: Plan block
-      when: tf_state == 'planned'
+      when: pac_tf_state == 'planned'
       block:
         - name: Plan terraform
           terraform:
-            backend_config: "{{ tf_backend_config }}"
+            backend_config: "{{ pac_tf_backend_config }}"
             provider_upgrade: true
             force_init: true
             init_reconfigure: true
             plan_file: "{{ pac_tf_plan_file }}"
-            targets: "{{ tf_targets }}"
-            project_path: "{{ tf_root_path }}"
-            state: "{{ tf_state }}"
-            workspace: "{{ tf_workspace }}"
-            variables_files: "{{ tf_variable_files }}"
+            targets: "{{ pac_tf_targets }}"
+            project_path: "{{ pac_tf_root_path }}"
+            state: "{{ pac_tf_state }}"
+            workspace: "{{ pac_tf_workspace }}"
+            variables_files: "{{ pac_tf_variable_files }}"
+          register: tf_run
+
+        - name: Create output settings from terraform plan
+          shell: 
+            cmd: "terraform show -json {{ pac_tf_plan_file }} > {{ output_config_file }}" 
+            chdir: "{{ pac_tf_root_path }}"
+
+        - name: Print terraform plan
+          debug: var=tf_run.stdout_lines
 
         - name: Prompt to continue terraform plan
           pause:
@@ -112,20 +118,20 @@
           when: tf_result.user_input == 'n'
           meta: end_play
 
-    - name: Apply block
-      when: tf_state == 'present'
+    - name: Apply terraform
+      when: pac_tf_state == 'present'
       terraform:
-        backend_config: "{{ tf_backend_config }}"
+        backend_config: "{{ pac_tf_backend_config }}"
         provider_upgrade: true
-        targets: "{{ tf_targets }}"
-        project_path: "{{ tf_root_path }}"
-        state: "{{ tf_state }}"
-        workspace: "{{ tf_workspace }}"
-        variables_files: "{{ tf_variable_files }}"
+        targets: "{{ pac_tf_targets }}"
+        project_path: "{{ pac_tf_root_path }}"
+        state: "{{ pac_tf_state }}"
+        workspace: "{{ pac_tf_workspace }}"
+        variables_files: "{{ pac_tf_variable_files }}"
   # always:
   #   - name: Remove tmp tfvars file if exists
   #     file:
-  #       path: "{{ tf_tfvars_file }}"
+  #       path: "{{ pac_tf_tfvars_file }}"
   #       state: absent
     
   #   - name: Remove plan file if exists

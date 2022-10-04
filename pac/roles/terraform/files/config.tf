@@ -1,58 +1,130 @@
-variable "roach_hosts" {
-    type        = string
-    nullable    = false
-    description = "Comma seperated string of all hosts in cockroachdb cluster"
-}
-
 locals {
-    minio1_path                 = "/mnt/minio1"
-    minio2_path                 = "/mnt/minio2"
-    minio3_path                 = "/mnt/minio3"
-    minio4_path                 = "/mnt/minio4"
+    server_user                 = "server"
+    
+    minio_name                  = "minio"
+    roach_name                  = "roach"
+    server_name                 = "server"
 
-    ca_server_ip                = "192.168.3.2"
-    ca_server_hostname          = "ca-server"
+    minio_mount_point           = "/mnt"
+    storage_mount_point         = "/mnt/storage"
 
-    dns_server_ip               = "192.168.3.3"
     dns_server_hostname         = "dns-server"
+    dns_server_fqdn             = "${local.dns_server_hostname}.${local.domain}"
 
-    pac_server1_ip              = "192.168.3.4"
-    pac_server1_hostname        = "pac_server1"
+    server1_hostname            = "${local.server_name}1"
+    server2_hostname            = "${local.server_name}2"
+    server3_hostname            = "${local.server_name}3"
+    server4_hostname            = "${local.server_name}4"
 
-    pac_server2_ip              = "192.168.3.5"
-    pac_server2_hostname        = "pac_server2"
+    server1_fqdn                = "${local.server1_hostname}.${local.domain}"
+    server2_fqdn                = "${local.server1_hostname}.${local.domain}"
+    server3_fqdn                = "${local.server1_hostname}.${local.domain}"
+    server4_fqdn                = "${local.server1_hostname}.${local.domain}"
 
-    pac_server3_ip              = "192.168.3.5"
-    pac_server3_hostname        = "pac_server3"
+    roach1_hostname             = "${local.roach_name}1"
+    roach2_hostname             = "${local.roach_name}2"
+    roach3_hostname             = "${local.roach_name}3"
 
-    pac_server4_ip              = "192.168.3.6"
-    pac_server4_hostname        = "pac_server4"
+    roach1_fqdn                 = "${local.roach1_hostname}.${local.domain}"
+    roach2_fqdn                 = "${local.roach2_hostname}.${local.domain}"
+    roach3_fqdn                 = "${local.roach3_hostname}.${local.domain}"
 
-    pac_user                    = "pac-user"
-    pac_domain                  = "pacdev.com"
+    minio1_hostname             = "${local.minio_name}1"
+    minio2_hostname             = "${local.minio_name}2"
+    minio3_hostname             = "${local.minio_name}3"
+    minio4_hostname             = "${local.minio_name}4"
+
+    minio1_fqdn                 = "${local.minio1_hostname}.${local.domain}"
+    minio2_fqdn                 = "${local.minio2_hostname}.${local.domain}"
+    minio3_fqdn                 = "${local.minio3_hostname}.${local.domain}"
+    minio4_fqdn                 = "${local.minio4_hostname}.${local.domain}"
+
+    minio1_path                 = "${local.minio_mount_point}/${local.minio1_hostname}"
+    minio2_path                 = "${local.minio_mount_point}/${local.minio2_hostname}"
+    minio3_path                 = "${local.minio_mount_point}/${local.minio3_hostname}"
+    minio4_path                 = "${local.minio_mount_point}/${local.minio4_hostname}"
 
     alertmanager_config_file    = "/etc/alertmanager/alertmanager.yml"
-    prometheus_config_file      = "/etc/prometheus/prometheus.yml"
+    prometheus_config_dir       = "/etc/prometheus/"
     coredns_config_file         = "/etc/coredns/Corefile"
 
-    ca_server                   = {
-        ip  = "${local.ca_server_ip}"
+    home_dir                    = "/home/${local.server_user}"
+
+    csr_dir                     = "${local.home_dir}/.csrs"
+    cockroach_certs_dir         = "${local.home_dir}/.cockroach-certs"
+    minio_certs_dir             = "${local.home_dir}/.minio/certs"
+
+    minio_key                   = {
+        dir_path    = local.minio_certs_dir
+        filename    = "private.key"
     }
+
+    minio_cert                  = {
+        dir_path    = local.minio_certs_dir
+        filename    = "public.crt"
+    }
+
+    cockroach_node_cert         = {
+        dir_path    = local.cockroach_certs_dir
+        filename    = "node.crt"
+    }
+
+    cockroach_node_key          = {
+        dir_path    = local.cockroach_certs_dir
+        filename    = "node.key"
+    }
+
+    cockroach_client_cert       = {
+        dir_path    = local.cockroach_certs_dir
+        filename    = "client.${local.server_user}.crt"
+    }
+
+    cockroach_client_key        = {
+        dir_path    = local.cockroach_certs_dir
+        filename    = "client.${local.server_user}.key"
+    }
+
+    default_cockroach_node_tls  = {
+        cert    = local.cockroach_node_cert
+        key     = local.cockroach_node_key
+        csr     = {
+            dir_path    = local.csr_dir
+            filename    = "node.csr"
+        }
+    }
+
+    default_cockroach_client_tls    = {
+        cert    = local.cockroach_client_cert
+        key     = local.cockroach_client_key
+        csr     = {
+            dir_path    = local.csr_dir
+            filename    = "client.csr"
+        }
+    }
+
+    default_minio_tls           =  {
+        cert    = local.minio_cert
+        key     = local.minio_key
+        csr     = {
+            dir_path    = local.csr_dir
+            filename    = "minio.csr"
+        }
+    }                 
 
     coredns_docker              = {
         name        = "coredns"
         root_var    = {
             action      = "start"
-            config_file = "${local.coredns_config_file}"
+            config_file = local.coredns_config_file
         }
     }
 
     minio_docker                = {
         name        = "minio"
         root_var    = {
-            hostname            = "minio"
+            hostname            = local.minio_name
             action              = "start"
-            storage_path        = "/mnt/minio"
+            storage_path        = "${local.minio_mount_point}${local.minio_name}"
             protocol            = "http"
             distributed_mode    = {
                 num_of_drives   = 4
@@ -65,7 +137,7 @@ locals {
         name        = "node_exporter"
         root_var    = {
             action          = "start"
-            storage_path    = "/mnt/storage/node_exporter"
+            storage_path    = "${local.storage_mount_point}/node_exporter"
         }
     }
 
@@ -73,7 +145,7 @@ locals {
         name        = "grafana"
         root_var    = {
             action          = "start"
-            storage_path    = "/mnt/storage/grafana"
+            storage_path    = "${local.storage_mount_point}/grafana"
         }
     }
 
@@ -81,32 +153,32 @@ locals {
         name        = "grafana"
         root_var    = {
             action          = "start"
-            storage_path    = "/mnt/storage/promethues"
-            config_dir      = "${local.prometheus_config_file}"
+            storage_path    = "${local.storage_mount_point}/promethues"
+            config_dir      = local.prometheus_config_dir
         }
     }
 
     subset_cockroachdb_docker   = {
         action          = "start"
-        storage_path    = "/mnt/storage/cockroachdb"
-        start_command   = "start --insecure --join=${var.roach_hosts}"
+        storage_path    = "${local.storage_mount_point}/cockroachdb"
+        start_command   = "start --insecure --join=192.168.3.5,192.168.3.6,192.168.3.7"
     }
 
     start_cockroachdb_docker    = {
         name        = "cockroachdb"
-        root_var    = "${local.subset_cockroachdb_docker}"
+        root_var    = local.subset_cockroachdb_docker
     }
 
     init_cockroachdb_docker     = {
         name        = "cockroachdb"
-        root_var    = "${merge(local.subset_cockroachdb_docker, map("init_command", "init --insecure"))}"
+        root_var    = "${merge(local.subset_cockroachdb_docker, tomap({"init_command" = "init --insecure"}))}"
     }
 
     alertmanager_docker         = {
         name        = "alertmanager"
         root_var    = {
             action         = "start"
-            config_file    = "${local.alertmanager_config_file}"
+            config_file    = local.alertmanager_config_file
         }
     }
 
@@ -115,207 +187,5 @@ locals {
         root_var    = {
             action  = "start"
         }
-    }
-
-    specs                       = {
-        memory  = 2048
-        cpus    = 1
-    }
-
-    minio_server_specs          = {
-        memory  = 2048
-        cpus    = 1
-        disks   = [
-            {
-                name    = "minio1"
-                path    = "${local.minio1_path}"
-                size    = 1
-            },
-            {
-                name    = "minio2"
-                path    = "${local.minio2_path}"
-                size    = 1
-            },
-            {
-                name    = "minio3"
-                path    = "${local.minio3_path}"
-                size    = 1
-            },
-            {
-                name    = "minio4"
-                path    = "${local.minio4_path}"
-                size    = 1
-            },
-        ]
-    }
-
-    cloud_init                  = {
-        user_data       = {
-            users   = [
-                {
-                    name            = "${local.pac_user}"
-                    primary_group   = "${local.pac_user}"
-                    groups          = "sudo"
-                    sudo            = "ALL=(ALL) NOPASSWD:ALL"
-                    shell           = "/bin/bash"
-                }
-            ]
-        },
-        network_config  = {
-            network = {
-                version     = 2
-                ethernets   = {
-                    eth0    = {
-                        dhcp4           = true
-                        dhcp4-overrides = {
-                            user-dns    = "no"
-                        }
-                        nameservers     = {
-                            addresses   = [
-                                "${local.dns_server_ip}",
-                                "8.8.8.8"
-                            ]
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-output "config" {
-    value   = {
-        terraform   = {}
-        droplets    = [
-            {
-                ip                  = "${local.ca_server_ip}"
-                hostname            = "${local.ca_server_hostname}"
-                user                = "${local.pac_user}"
-                cloud_init          = "${local.cloud_init}"
-                specs               = "${local.specs}"
-                ca                  = {
-                    server  = {}
-                }
-            },
-            {
-                ip                  = "${local.dns_server_ip}"
-                hostname            = "${local.dns_server_hostname}"
-                user                = "${local.pac_user}"
-                cloud_init          = "${local.cloud_init}"
-                specs               = "${local.specs}"
-                transfers           = [
-                    {
-                        source_env_var  = "PAC_DNS_COREFILE"
-                        dest            = "${coredns_config_file}"
-                    },
-                    {
-                        source_env_var  = "PAC_DNS_HOST_FILE"
-                        dest            = "/etc/coredns/hosts/pacdev.com"
-                    },
-                ]
-                docker_containers   = [
-                    "${local.coredns_docker}"
-                ]
-            },
-            {
-                ip                  = "${local.pac_server1_ip}"
-                hostname            = "${local.pac_server1_ip}"
-                user                = "${local.pac_user}"
-                cloud_init          = "${local.cloud_init}"
-                specs               = "${local.specs}"
-                transfers           = [
-                    {
-                        source_env_var  = "PAC_ALERT_MANAGER_CONFIG_FILE"
-                        dest            = "${alertmanager_config_file}"
-                    },
-                    {
-                        source_env_var  = "PAC_PROMETHEUS_CONFIG_DIR"
-                        dest            = "${prometheus_config_dir}"
-                    },
-                ]
-                ca                  = {
-                    client  = {
-                        ca_server           = "${local.ca_server}"
-                        subject_alt_names   = [
-                            "DNS:minio1.pacdev.com",
-                            "DNS:pac-server1.pacdev.com"
-                        ]
-                    }
-                }
-                docker_containers   = [
-                    "${local.alertmanager_docker}",
-                    "${local.node_exporter_docker}",
-                    "${local.grafana_docker}",
-                    "${local.prometheus_docker}",
-                    "${local.minio_docker}",
-                ]
-            },
-            {
-                ip                  = "${local.pac_server2_ip}"
-                hostname            = "${local.pac_server2_ip}"
-                user                = "${local.pac_user}"
-                cloud_init          = "${local.cloud_init}"
-                specs               = "${local.specs}"
-                ca                  = {
-                    client  = {
-                        ca_server           = "${local.ca_server}"
-                        subject_alt_names   = [
-                            "DNS:minio2.pacdev.com",
-                            "DNS:roach1.pacdev.com",
-                            "DNS:pac-server2.pacdev.com"
-                        ]
-                    }
-                }
-                docker_containers   = [
-                    "${local.node_exporter_docker}",
-                    "${local.init_cockroachdb_docker}",
-                    "${local.minio_docker}",
-                ]
-            },
-            {
-                ip                  = "${local.pac_server3_ip}"
-                hostname            = "${local.pac_server3_ip}"
-                user                = "${local.pac_user}"
-                cloud_init          = "${local.cloud_init}"
-                specs               = "${local.specs}"
-                ca                  = {
-                    client  = {
-                        ca_server           = "${local.ca_server}"
-                        subject_alt_names   = [
-                            "DNS:minio3.pacdev.com",
-                            "DNS:roach2.pacdev.com",
-                            "DNS:pac-server3.pacdev.com"
-                        ]
-                    }
-                }
-                docker_containers   = [
-                    "${local.node_exporter_docker}",
-                    "${local.start_cockroachdb_docker}",
-                    "${local.minio_docker}",
-                ]
-            },
-            {
-                ip                  = "${local.pac_server4_ip}"
-                hostname            = "${local.pac_server4_ip}"
-                user                = "${local.pac_user}"
-                cloud_init          = "${local.cloud_init}"
-                specs               = "${local.specs}"
-                ca                  = {
-                    client  = {
-                        ca_server           = "${local.ca_server}"
-                        subject_alt_names   = [
-                            "DNS:minio4.pacdev.com",
-                            "DNS:roach3.pacdev.com",
-                            "DNS:pac-server4.pacdev.com"
-                        ]
-                    }
-                }
-                docker_containers   = [
-                    "${local.node_exporter_docker}",
-                    "${local.start_cockroachdb_docker}",
-                    "${local.minio_docker}",
-                ]
-            },
-        ]
     }
 }

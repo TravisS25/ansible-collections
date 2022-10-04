@@ -1,7 +1,0 @@
-- name: Import volume info
-  import_task: volume_info.yaml
-- name: Enter volume size
-  pause:
-    prompt: "What volume size do you want for volume(s)(GBs)?"
-  register: volume_size_result
-  until: volume_size_result.user_input in pb_provider_list

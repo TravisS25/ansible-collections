@@ -1,35 +1,31 @@
-variable droplets {
-    type        = list(
-        object({
-            ip              = string
-            hostname        = string
-            cloud_init      = object({
-                network_config_file  = string
-                user_data_file       = string
-                vendor_data_file     = string
-            })
-            specs            = object({
-                cpus    = number
-                memory  = number
-                disks           = list(
-                    object({
-                        path    = string
-                        name    = string
-                        size    = number
-                    })
-                )
-            })
-        })
-    )
-    description = "Droplet servers to create.  If droplet does not need external drives, then make disk.count = 0"
-    nullable = false
+variable dns_server_ip {
+    type        = string
+    default     = "192.168.3.2"
+    description = "Static ip for dns server"
+}
 
-    validation {
-        condition = alltrue([
-            for droplet in var.droplets : droplet.specs.cpus > 0 && droplet.specs.memory > 0
-        ])
-        error_message = "Cpus and memory must be postive numbers"
-    }
+variable pac_server1_ip {
+    type        = string
+    default     = "192.168.3.3"
+    description = "Static ip for pac server 1 server"
+}
+
+variable pac_server2_ip {
+    type        = string
+    default     = "192.168.3.4"
+    description = "Static ip for pac server 2 server"
+}
+
+variable pac_server3_ip {
+    type        = string
+    default     = "192.168.3.5"
+    description = "Static ip for pac server 3 server"
+}
+
+variable pac_server4_ip {
+    type        = string
+    default     = "192.168.3.6"
+    description = "Static ip for pac server 4 server"
 }
 
 variable storage_pool {

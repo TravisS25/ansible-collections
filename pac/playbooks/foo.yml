@@ -17,7 +17,7 @@
       block:
         - name: Create CA private key
           import_role:
-            name: traviss25.util.ca
+            name: traviss25.util.ssl
             tasks_from: generate_private_key
           vars:
             key:
@@ -27,7 +27,7 @@
 
         - name: Create CA cert
           import_role:
-            name: traviss25.util.ca
+            name: traviss25.util.ssl
             tasks_from: generate_ca_cert
           vars:
             common_ca_name: Master CA
@@ -39,7 +39,7 @@
 
         - name: Create client private key
           import_role:
-            name: traviss25.util.ca
+            name: traviss25.util.ssl
             tasks_from: generate_private_key
           vars:
             key:
@@ -49,7 +49,7 @@
 
         - name: Generate CSR
           import_role:
-            name: traviss25.util.ca
+            name: traviss25.util.ssl
             tasks_from: generate_csr
           vars:
             private_key_file: "{{ keys_path }}/client.key"
@@ -74,7 +74,7 @@
 
         - name: Generate cert
           import_role:
-            name: traviss25.util.ca
+            name: traviss25.util.ssl
             tasks_from: generate_cert
           vars:
             private_key_file: "{{ keys_path }}/client.key"
@@ -89,7 +89,7 @@
 
         - name: Update trusted certs
           import_role:
-            name: traviss25.util.ca
+            name: traviss25.util.ssl
             tasks_from: update_trusted_certs
           vars:
             ca_cert_content: "{{ ca_cert_shell.stdout }}"

@@ -1,0 +1,38 @@
+---
+- name: Set generate ca cert facts
+  set_fact:
+    cert_full_path: "{{ (cert.dir_path, cert.filename) | path_join }}"
+    overwrite: "{{ cert.overwrite | default(false) }}"
+
+- name: Get cert file stats for CA
+  stat:
+    path: "{{ cert_full_path }}"
+  register: ca_cert_results
+
+- name: Create cert directory
+  file:
+    state: directory
+    path: "{{ cert.dir_path }}"
+
+- name: Create cert block
+  when: not ca_cert_results.stat.exists or overwrite
+  block:
+    - name: Create certificate signing request (CSR) for CA certificate
+      community.crypto.openssl_csr_pipe:
+        privatekey_path: "{{ private_key_file }}"
+        common_name: "{{ common_name }}"
+        use_common_name_for_san: false # since we do not specify SANs, don't use CN as a SAN
+        basic_constraints:
+          - "CA:TRUE"
+        basic_constraints_critical: yes
+        key_usage:
+          - keyCertSign
+        key_usage_critical: true
+      register: ca_csr
+
+    - name: Create self-signed CA certificate from CSR
+      community.crypto.x509_certificate:
+        path: "{{ cert_full_path }}"
+        csr_content: "{{ ca_csr.csr }}"
+        privatekey_path: "{{ private_key_file }}"
+        provider: selfsigned

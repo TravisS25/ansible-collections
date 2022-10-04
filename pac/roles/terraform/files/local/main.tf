@@ -23,7 +23,7 @@ resource "lxd_volume" "pac_volumes" {
     depends_on = [lxd_storage_pool.pac_pool]
 
     for_each = {
-        for disk in local.droplet_disks : "${disk.hostname}__${disk.disk_name}" => disk if disk.disk_size > 0
+        for disk in local.droplet_disks : "${disk.hostname}__${disk.disk_name}" => disk
     }
 
     name = "${each.key}"
@@ -36,23 +36,26 @@ resource "lxd_volume" "pac_volumes" {
 resource "lxd_container" "droplets" {
     depends_on = [lxd_volume.pac_volumes, lxd_network.network]
 
-    count = length(var.droplets)
+    count = length(local.droplets)
 
-    name      = "${var.droplets[count.index].hostname}"
+    name      = "${local.droplets[count.index].hostname}"
     image     = "ubuntu:e299296138c2"
     ephemeral = false
     start_container = true
 
     config = {
         "boot.autostart"        = true
-        "user.user-data"        = file(var.droplets[count.index].cloud_init.user_data_file)
-        # "user.vendor-data"      = var.droplets[count.index].cloud_init.vendor_data_file == "" ? "" : file(var.droplets[count.index].cloud_init.vendor_data_file)
-        "user.network-config"   = file(var.droplets[count.index].cloud_init.network_config_file)
+        "user.user-data"        = <<-EOT
+            #cloud-config
+
+            ${yamlencode(local.droplets[count.index].cloud_init.user_data)}
+        EOT
+        "user.network-config"   = yamlencode(local.droplets[count.index].cloud_init.network_config)
     }
 
     limits = {
-        cpu     = "${tostring(var.droplets[count.index].specs.cpus)}"
-        memory  = "${tostring(var.droplets[count.index].specs.memory)}MiB"
+        cpu     = "${tostring(local.droplets[count.index].specs.cpus)}"
+        memory  = "${tostring(local.droplets[count.index].specs.memory)}MiB"
     }
 
     device {
@@ -62,7 +65,7 @@ resource "lxd_container" "droplets" {
         properties = {
             nictype         = "bridged"
             parent          = "${lxd_network.network.name}"
-            "ipv4.address"  = "${var.droplets[count.index].ip}"
+            "ipv4.address"  = "${local.droplets[count.index].ip}"
         }
     }
 
@@ -78,7 +81,7 @@ resource "lxd_container" "droplets" {
 
     dynamic "device" {
         for_each = { 
-            for item in var.droplets[count.index].specs.disks: item.name => item if item.size > 0 
+            for item in lookup(local.droplets[count.index].specs, "disks", []): item.name => item
         }
 
         content {
@@ -86,7 +89,7 @@ resource "lxd_container" "droplets" {
             type = "disk"
             properties = {
                 path    = "${device.value.path}"
-                source  = "${var.droplets[count.index].hostname}__${device.value.name}"
+                source  = "${local.droplets[count.index].hostname}__${device.value.name}"
                 pool    = "${lxd_storage_pool.pac_pool.name}"
             }
         }

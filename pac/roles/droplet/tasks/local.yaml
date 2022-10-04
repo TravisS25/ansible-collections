@@ -5,19 +5,43 @@
 # This task simply has a bool flag to indicate whether we are running
 # in preflight mode or actually executing tasks
 
+- name: "{% if preflight %}CA client preflight{% else %}Run ca client{% endif %}"
+  when: droplet.ca is defined and droplet.ca.client is defined
+  include_role:
+    name: traviss25.dev.tls
+    tasks_from: "{% if preflight %}client_preflight{% else %}client{% endif %}"
+  vars:
+    cert: "{{ droplet.ssl.client.cert }}"
+    key: "{{ droplet.ssl.client.key }}"
+    csr: "{{ droplet.ssl.client.csr }}"
+    ca: "{{ droplet.ssl.client.ca }}"
+    subject_alt_names: "{{ droplet.ca.client.subject_alt_names }}"
+
 - name: Main block
-  become: true
-  delegate_to: "{{ droplet.ip }}"
-  remote_user: "{{ droplet.user }}"
+  # become: true
+  # delegate_to: "{{ droplet.ip }}"
+  # remote_user: "{{ droplet.user }}"
   block:
-    - name: "{% if preflight %}CA server preflight{% else %}Run ca server{% endif %}"
-      when: droplet.ca is defined and droplet.ca.server is defined
-      import_role:
-        name: traviss25.dev.ca
-        tasks_from: "{% if preflight %}server_preflight{% else %}server{% endif %}"
-      vars:
-        cert: "{{ droplet.ca.server.cert | default({}) }}"
-        key: "{{ droplet.ca.server.key | default({}) }}"
+    # - name: Transfer files to remote server
+    #   when: droplet.transfers is defined
+    #   loop: "{{ droplet.transfers }}"
+    #   loop_control:
+    #     loop_var: file
+    #   delegate_to: "{{ droplet.ip }}"
+    #   become: true
+    #   remote_user: "{{ droplet.user }}"
+    #   copy:
+    #     src: "{{ lookup('env', file.source_env_var) }}"
+    #     dest: "{{ file.dest }}"
+
+    # - name: "{% if preflight %}CA server preflight{% else %}Run ca server{% endif %}"
+    #   when: droplet.ca is defined and droplet.ca.server is defined
+    #   import_role:
+    #     name: traviss25.dev.ca
+    #     tasks_from: "{% if preflight %}server_preflight{% else %}server{% endif %}"
+    #   vars:
+    #     cert: "{{ droplet.ca.server.cert | default({}) }}"
+    #     key: "{{ droplet.ca.server.key | default({}) }}"
 
     - name: "{% if preflight %}CA client preflight{% else %}Run ca client{% endif %}"
       when: droplet.ca is defined and droplet.ca.client is defined
@@ -31,13 +55,13 @@
         ca_server:
           ip: "{{ droplet.ca.client.ca_server.ip }}"
 
-    - name: "{% if preflight %}DNS preflight{% else %}Run dns server{% endif %}"
-      when: droplet.dns is defined
-      import_role:
-        name: traviss25.dev.dns
-        tasks_from: "{% if preflight %}main_preflight{% else %}main{% endif %}"
-      vars:
-        corefile: "{{ droplet.dns.corefile }}"
+    # - name: "{% if preflight %}DNS preflight{% else %}Run dns server{% endif %}"
+    #   when: droplet.dns is defined
+    #   import_role:
+    #     name: traviss25.dev.dns
+    #     tasks_from: "{% if preflight %}main_preflight{% else %}main{% endif %}"
+    #   vars:
+    #     corefile: "{{ droplet.dns.corefile }}"
 
     - name: "{% if preflight %}Docker install preflight{% else %}Run docker install{% endif %}"
       import_role:
@@ -46,26 +70,6 @@
       vars:
         users: 
           - "{{ droplet.user }}"
-
-    - name: Transfer files to remote server
-      when: droplet.transfers is defined
-      loop: "{{ droplet.transfers }}"
-      loop_control:
-        loop_var: file
-      delegate_to: "{{ droplet.ip }}"
-      become: true
-      remote_user: "{{ droplet.user }}"
-      copy:
-        src: "{{ lookup('env', file.source_env_var) }}"
-        dest: "{{ file.dest }}"
-
-    # - name: Debug container here!!!!!
-    #   loop: "{{ droplet.docker_containers }}"
-    #   loop_control:
-    #     loop_var: docker_container
-    #   debug:
-    #     msg: "{{ docker_container }}"
-
 
     - name: "{% if preflight %}Docker container preflight{% else %}Run docker container{% endif %}"
       loop: "{{ droplet.docker_containers }}"

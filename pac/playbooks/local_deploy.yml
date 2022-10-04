@@ -1,121 +1,69 @@
 ---
 - name: Local Deploy
   hosts: localhost
-  gather_facts: true
-
-  pre_tasks:
-    - name: Assert that env vars are set locally
-      assert:
-        that:
-          - "{{ lookup('env', 'PAC_ALERT_MANAGER_CONFIG') is defined }}"
-          - "{{ lookup('env', 'PAC_PROMETHEUS_CONFIG') is defined }}"
-        fail_msg: Env vars "PAC_ALERT_MANAGER_CONFIG", "PAC_PROMETHEUS_CONFIG" must be defined locally
 
   tasks:
-    - name: Import config vars from file
-      include_vars:
-        name: file_vars
-        file: "{{ import_file }}"
-
-    - name: Gather the package facts
-      package_facts:
-        manager: auto
-
-    - name: Get current user on localhost
+    - name: Set playbook facts
       set_fact:
-        current_user: "{{ lookup('env', 'USER') }}"
+        config: {
+          terraform: {
+            output_config_file: /tmp/pac_terraform_config.json,
+            local_vars: {
+              root_var: {}
+            } 
+          }
+        }
 
-    - name: Localhost root block
+    - name: Config file block
+      when: config_file is defined
       block:
-        - name: Set local deploy facts
+        - name: Import config file
           set_fact:
-            terraform_droplets: []
-            setup_droplets: []
+            config: "{{ lookup('file', config_file) }}"
 
-        - name: Loop through droplets and set facts
-          loop: "{{ file_vars.config.droplets }}"
-          vars:
-            terraform_droplet:
-              ip: "{{ item.ip }}"
-              hostname: "{{ item.hostname }}"
-              cloud_init: "{{ item.cloud_init }}"
-              specs:
-                cpus: "{{ item.specs.cpus }}"
-                memory: "{{ item.specs.memory }}"
-                disks: "{{ item.specs.disks | default([{'name': '', 'path': '', 'size': 0}]) }}"
-            setup_droplet:
-              ip: "{{ item.ip }}"
-              user: "{{ item.user }}"
-              docker_containers: "{{ item.docker_containers | default([]) }}"
-              docker_composes: "{{ item.docker_composes | default([]) }}"
-          set_fact:
-            terraform_droplets: "{{ terraform_droplets + [terraform_droplet] }}"
-            setup_droplets: "{{ setup_droplets + [setup_droplet] }}"
-
-        - name: Set terraform facts
-          set_fact:
-            tf_local_vars:
-              terraform: "{{ file_vars.config.terraform | default({}) }}"
-              droplets: "{{ terraform_droplets }}"
-
-        - name: Run terraform preflight
+        - name: Terraform prelight
           import_role:
             name: traviss25.pac.terraform
             tasks_from: main_preflight
           vars:
-            local_vars: "{{ tf_local_vars }}"
+            local_vars:
+              root_var: "{{ config.terraform.local_vars.root_var }}"
 
-        - name: Run droplet preflight
-          loop: "{{ setup_droplets }}"
-          include_role:
-            name: droplet
-            tasks_from: local
-          vars:
-            preflight: true
-            droplet: "{{ item }}"
+    - name: Run planned terraform
+      import_role:
+        name: traviss25.pac.terraform
+      vars:
+        output_config_file: "{{ config.terraform.output_config_file }}"
+        state: planned
+        local_vars:
+          root_var: "{{ config.terraform.local_vars.root_var }}"
 
-        # - name: Install terraform
-        #   when: ansible_facts.packages['terraform'] | length == 0
-        #   import_role:
-        #     name: traviss25.util.hashicorp
-        #     tasks_from: install
-        #   vars:
-        #     package: terraform
+    - name: Run apply terraform
+      import_role:
+        name: traviss25.pac.terraform
+      vars:
+        output_config_file: "{{ config.terraform.output_config_file }}"
+        state: present
+        local_vars:
+          root_var: "{{ config.terraform.local_vars.root_var }}"
 
-        # - name: Install snap
-        #   when: ansible_facts.packages['snapd'] | length == 0
-        #   apt:
-        #     update_cache: yes
-        #     pkg:
-        #       - snapd
+    - name: Get output config file content
+      set_fact:
+        output_config_content: "{{ lookup('file', config.terraform.output_config_file) | from_json }}"
 
-        # - name: Check if lxd installed by snap
-        #   ignore_errors: true
-        #   shell: snap list | grep blah
-        #   register: snap_output
+    - name: Set droplet settings
+      set_fact:
+        droplets: "{{ output_config_content.output_changes.local_config.after.droplets }}"
 
-        # - name: Install lxd
-        #   when: snap_output.stdout_lines | length == 0
-        #   import_role:
-        #     name: traviss25.util.lxd
-        #     tasks_from: install
-        #   vars:
-        #     users:
-        #       - "{{ current_user }}"
-          
-        # - name: Run terraform
-        #   import_role:
-        #     name: terraform
-        #   vars:
-        #     local_vars: "{{ tf_local_vars }}"
-
-        # - name: Run droplet
-        #   include_role:
-        #     name: droplet
-        #     tasks_from: local
-        #   vars:
-        #     preflight: true
-        #     droplet: "{{ item }}"
-      
-
-
+    - name: Droplet preflights
+      loop: "{{ droplets }}"
+      include_role:
+        name: traviss25.pac.droplet
+        tasks_from: local
+        apply:
+          delegate_to: "{{ item.ip }}"
+          become: true
+          remote_user: "{{ item.user }}"
+      vars:
+        preflight: true
+        droplet: "{{ item }}"

@@ -35,6 +35,3 @@ argument_specs:
     short_description: Creates droplet
     description: Creates droplet based on settings passed
     options: *local_options_ref
-  local_preflight:
-    short_description: Preflight for droplet
-    options: *local_options_ref
