@@ -1,0 +1,51 @@
+---
+- name: Set base vault init facts
+  set_fact:
+    secret_shares: "{{ secret_shares | default(init_defaults.secret_shares) }}"
+    secret_threshold: "{{ secret_threshold | default(init_defaults.secret_threshold) }}"
+
+- name: Determine if vault is initialized
+  uri:
+    url: "{{ host }}/v1/sys/init"
+    body_format: json
+    method: get
+  register: init_test_result
+
+- name: Debug heeeeeeere
+  debug:
+    msg: "{{ init_test_result }}"
+
+- name: Initialize vault block
+  when: not init_test_result.json.initialized
+  block:
+    - name: Initialize vault
+      uri:
+        url: "{{ host }}/v1/sys/init"
+        body_format: json
+        method: post
+        body:
+          secret_shares: "{{ secret_shares }}"
+          secret_threshold: "{{ secret_threshold }}"
+      register: vault_keys
+
+    - name: Write contents to current host
+      copy:
+        remote_src: true
+        content: "{{ vault_keys.json }}"
+        dest: "{{ vault_keys_file }}"
+
+    - name: Change file mode
+      file:
+        path: "{{ vault_keys_file }}"
+        mode: 0700
+
+    - name: Loop through keys list and unseal vault
+      loop: "{{ range(0, secret_threshold) }}"
+      uri: 
+        url: "{{ host }}/v1/sys/unseal"
+        body_format: json
+        method: post
+        body:
+          key: "{{ vault_keys.json.keys[loop.index0] }}"
+
+

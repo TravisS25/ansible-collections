@@ -1,0 +1,6 @@
+---
+- name: Import base preflight
+  import_task: base_preflight
+  vars:
+    method: "{{ method }}"
+    body: "{{ body }}"

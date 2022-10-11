@@ -1,0 +1,19 @@
+---
+- name: Vault policy
+  hosts: localhost
+
+  tasks:
+    - name: Set base policy playbook facts
+      set_fact:
+        base_url: "{{ url | default(localhost_defaults.vault_server) }}"
+        policy_url: "{{  }}"
+
+    - name: Enable pki mount
+      uri:
+        url: "{{ base_url }}/v1/sys/mounts/pac-pki"
+        body_format: json
+        method: post
+        body:
+          type: pki
+        headers:
+          X-Vault-Token: hvs.PdzL3jsBf9Q7WGYVEp0SJN4b

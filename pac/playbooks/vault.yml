@@ -1,0 +1,35 @@
+---
+- name: Testing vault settings
+  hosts: localhost
+
+  tasks:
+    - name: Run vault init
+      import_role:
+        name: traviss25.pac.vault
+        tasks_from: init
+      vars:
+        host: http://localhost:8210
+        vault_keys_file: /home/travis/.vault-keys
+
+    # - name: Enable pki mount
+    #   uri:
+    #     url: http://localhost:8200/v1/sys/mounts/pac-pki
+    #     body_format: json
+    #     method: post
+    #     body:
+    #       type: pki
+    #     headers:
+    #       X-Vault-Token: hvs.PdzL3jsBf9Q7WGYVEp0SJN4b
+    # - name: Get secret list
+    #   uri:
+    #     url: http://localhost:8200/v1/sys/policy
+    #     body_format: json
+    #     method: get
+    #     headers:
+    #       X-Vault-Token: hvs.PdzL3jsBf9Q7WGYVEp0SJN4b
+    #   register: list_result
+
+    # - name: Display result
+    #   debug:
+    #     msg: "{{ list_result }}"
+        

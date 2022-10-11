@@ -1,0 +1,10 @@
+---
+base_policy_url: &base_policy_url_ref /v1/sys/policy/:name
+
+
+localhost_defaults:
+  vault_server: http://localhost:8200
+  policy_url:
+    get: *base_policy_url_ref
+    post: *base_policy_url_ref
+    put: *base_policy_url_ref

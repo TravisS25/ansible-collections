@@ -79,17 +79,17 @@ locals {
         "${var.pac_server2_ip}"   = [
             "${local.minio2_fqdn}",
             "${local.server2_hostname}.${local.domain}",
-            "${local.roach1_fqdn}",
+            "${local.cockroach1_fqdn}",
         ],
         "${var.pac_server3_ip}"   = [
             "${local.minio3_fqdn}",
             "${local.server3_hostname}.${local.domain}",
-            "${local.roach2_fqdn}",
+            "${local.cockroach2_fqdn}",
         ],
         "${var.pac_server4_ip}"   = [
             "${local.minio4_fqdn}",
             "${local.server4_hostname}.${local.domain}",
-            "${local.roach3_fqdn}",
+            "${local.cockroach3_fqdn}",
         ],
     }
 
@@ -100,6 +100,14 @@ locals {
             user                = local.server_user
             cloud_init          = local.cloud_init
             specs               = local.minio_server_specs
+            vault               = {
+                policy  = {
+
+                }
+                pki     = {
+
+                }
+            }
             tls                 = [
                 merge(local.default_minio_tls, {
                     common_name         = local.server1_fqdn
@@ -127,11 +135,11 @@ locals {
         #         }),
         #         merge(local.default_cockroach_node_tls,{
         #             common_name         = local.server2_fqdn
-        #             subject_alt_names   = ["DNS:${local.roach1_fqdn}"]
+        #             subject_alt_names   = ["DNS:${local.cockroach1_fqdn}"]
         #         }),
         #         merge(local.default_cockroach_client_tls,{
         #             common_name         = local.server2_fqdn
-        #             subject_alt_names   = ["DNS:${local.roach1_fqdn}"]
+        #             subject_alt_names   = ["DNS:${local.cockroach1_fqdn}"]
         #         }),
         #     ]
         #     docker_containers   = [
@@ -153,11 +161,11 @@ locals {
         #         }),
         #         merge(local.default_cockroach_node_tls,{
         #             common_name         = local.server3_fqdn
-        #             subject_alt_names   = ["DNS:${local.roach2_fqdn}"]
+        #             subject_alt_names   = ["DNS:${local.cockroach2_fqdn}"]
         #         }),
         #         merge(local.default_cockroach_client_tls,{
         #             common_name         = local.server3_fqdn
-        #             subject_alt_names   = ["DNS:${local.roach2_fqdn}"]
+        #             subject_alt_names   = ["DNS:${local.cockroach2_fqdn}"]
         #         }),
         #     ]
         #     docker_containers   = [
@@ -179,11 +187,11 @@ locals {
         #         }),
         #         merge(local.default_cockroach_node_tls,{
         #             common_name         = local.server4_fqdn
-        #             subject_alt_names   = ["DNS:${local.roach3_fqdn}"]
+        #             subject_alt_names   = ["DNS:${local.cockroach3_fqdn}"]
         #         }),
         #         merge(local.default_cockroach_client_tls,{
         #             common_name         = local.server4_fqdn
-        #             subject_alt_names   = ["DNS:${local.roach3_fqdn}"]
+        #             subject_alt_names   = ["DNS:${local.cockroach3_fqdn}"]
         #         }),
         #     ]
         #     docker_containers   = [

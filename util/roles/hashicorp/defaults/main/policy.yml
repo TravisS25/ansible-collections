@@ -1,0 +1,7 @@
+policy_base_url: &policy_base_url_ref /v1/sys/policy/
+
+policy_defaults:
+  url: 
+    get: *policy_base_url_ref
+    post: *policy_base_url_ref
+    put: *policy_base_url_ref

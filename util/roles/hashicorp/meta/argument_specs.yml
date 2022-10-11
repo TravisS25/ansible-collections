@@ -1,4 +1,38 @@
 ---
+base_api_options: &base_api_options_ref
+  method:
+    type: str
+    required: true
+    choices:
+      - list
+      - get
+      - post
+      - put
+      - patch
+      - delete
+  base_url:
+    type: str
+    required: true
+    description: Base url to vault server
+  url_path:
+    type: str
+    required: true
+    description: Path to api endpoint
+  body:
+    type: dict
+    description: Body that will be send 
+  headers:
+    type: dict
+    description: Generic headers to send with request
+  payload:
+    type: dict
+    description: Generic payload that will be sent to vault server for POST/PUT/PATCH requests
+
+# --------------------------------------------------------------------
+
+policy_options: &policy_options_ref
+  <<: *base_api_options_ref
+
 install_options: &install_options_ref
   package:
     type: str
@@ -16,5 +50,10 @@ argument_specs:
   install_preflight:
     description: Install preflight
     options: *install_options_ref
-        
+  policy:
+    description: API actions for vault policy
+    options: *policy_options_ref
+  policy_preflight:
+    description: Preflight for vault policy
+    options: *policy_options_ref
         

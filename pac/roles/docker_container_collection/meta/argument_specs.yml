@@ -27,6 +27,16 @@ docker_container_options: &docker_container_options_ref
       - stop
       - restart
 
+# -------------------------------------------------------------------------
+
+vault_options: &vault_options_ref
+  root_var:
+    type: dict
+    required: true
+    description: Generic vars for vault
+    options:
+      <<: [*docker_container_options_ref, *config_dir_options]
+
 alertmanager_options: &alertmanager_options_ref
   root_var:
     type: dict
@@ -154,6 +164,14 @@ redis_options: &redis_options_ref
       <<: [*docker_container_options_ref, *storage_path_options_ref]
 
 argument_specs:
+  vault:
+    short_description: Docker container actions for vault
+    options: *vault_options_ref
+
+  vault_preflight:
+    short_description: Vault preflight
+    options: *vault_options_ref
+
   alertmanager:
     short_description: Docker container actions for alert manager
     options: *alertmanager_options_ref

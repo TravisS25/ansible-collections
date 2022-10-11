@@ -1,0 +1,12 @@
+---
+- name: Set hashicorp base preflight facts
+  set_fact:
+    change_methods:
+      - post
+      - put
+      - patch
+    
+- name: Assert that body is defined with create/edit/patch http method
+  when: method in change_methods
+  assert:
+    that: body is defined

@@ -1,2 +1,0 @@
-cockroach_docker_image: cockroachdb/cockroach:v22.1.3
-cockroach_storage_location: "{{ default_storage_location }}/cockroach"

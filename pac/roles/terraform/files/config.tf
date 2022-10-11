@@ -1,8 +1,18 @@
 locals {
+    ///////////////////////////////////////////////////////
+    // The following values SHOULD NOT CHANGE!!!
+    ///////////////////////////////////////////////////////
+
+    app_name        = "pac"
+    vault_pki_path  = "${local.app_name}-pki"
+
+
+    // -----------------------------------------------------
+
     server_user                 = "server"
     
     minio_name                  = "minio"
-    roach_name                  = "roach"
+    cockroach_name              = "cockroachdb"
     server_name                 = "server"
 
     minio_mount_point           = "/mnt"
@@ -17,17 +27,17 @@ locals {
     server4_hostname            = "${local.server_name}4"
 
     server1_fqdn                = "${local.server1_hostname}.${local.domain}"
-    server2_fqdn                = "${local.server1_hostname}.${local.domain}"
-    server3_fqdn                = "${local.server1_hostname}.${local.domain}"
-    server4_fqdn                = "${local.server1_hostname}.${local.domain}"
+    server2_fqdn                = "${local.server2_hostname}.${local.domain}"
+    server3_fqdn                = "${local.server3_hostname}.${local.domain}"
+    server4_fqdn                = "${local.server4_hostname}.${local.domain}"
 
-    roach1_hostname             = "${local.roach_name}1"
-    roach2_hostname             = "${local.roach_name}2"
-    roach3_hostname             = "${local.roach_name}3"
+    cockroach1_hostname         = "${local.cockroach_name}1"
+    cockroach2_hostname         = "${local.cockroach_name}2"
+    cockroach3_hostname         = "${local.cockroach_name}3"
 
-    roach1_fqdn                 = "${local.roach1_hostname}.${local.domain}"
-    roach2_fqdn                 = "${local.roach2_hostname}.${local.domain}"
-    roach3_fqdn                 = "${local.roach3_hostname}.${local.domain}"
+    cockroach1_fqdn             = "${local.cockroach1_hostname}.${local.domain}"
+    cockroach2_fqdn             = "${local.cockroach2_hostname}.${local.domain}"
+    cockroach3_fqdn             = "${local.cockroach3_hostname}.${local.domain}"
 
     minio1_hostname             = "${local.minio_name}1"
     minio2_hostname             = "${local.minio_name}2"
@@ -165,12 +175,12 @@ locals {
     }
 
     start_cockroachdb_docker    = {
-        name        = "cockroachdb"
+        name        = "${local.cockroach_name}"
         root_var    = local.subset_cockroachdb_docker
     }
 
     init_cockroachdb_docker     = {
-        name        = "cockroachdb"
+        name        = "${local.cockroach_name}"
         root_var    = "${merge(local.subset_cockroachdb_docker, tomap({"init_command" = "init --insecure"}))}"
     }
 
@@ -187,5 +197,27 @@ locals {
         root_var    = {
             action  = "start"
         }
+    }
+
+    vault_settings              = {
+        pki_path    = "${local.vault_pki_path}"
+        policies    = [
+            {
+                name    = "cert-pki"
+                rule    = <<-EOT
+                    path "${local.vault_pki_path}/+/${local.cockroach_name}" {
+                        capabilities = ["create", "read", "update", "patch", "delete", "list"]
+                    }
+                EOT
+            },
+            {
+                name    = "${local.cockroach_name}-pki"
+                rule    = <<-EOT
+                    path "${local.vault_pki_path}/+/${local.cockroach_name}" {
+                        capabilities = ["create", "read", "update", "patch", "delete", "list"]
+                    }
+                EOT
+            },
+        ]
     }
 }
