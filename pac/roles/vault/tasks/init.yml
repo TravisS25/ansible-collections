@@ -11,10 +11,6 @@
     method: get
   register: init_test_result
 
-- name: Debug heeeeeeere
-  debug:
-    msg: "{{ init_test_result }}"
-
 - name: Initialize vault block
   when: not init_test_result.json.initialized
   block:
@@ -38,6 +34,10 @@
       file:
         path: "{{ vault_keys_file }}"
         mode: 0700
+
+    - name: Debug heeeeeeere
+      debug:
+        msg: "{{ init_test_result }}"
 
     - name: Loop through keys list and unseal vault
       loop: "{{ range(0, secret_threshold) }}"
