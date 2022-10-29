@@ -1,0 +1,94 @@
+---
+- name: Set fact for cockroachdb deploy
+  set_fact:
+    vault_ip: "{{ lookup('dig', root_var.vault.fqdn) }}"
+    vault_port: "{{ root_var.vault.port | default(all_defaults.vault_port) }}"
+    cockroachdb_docker_certs_dir: /cockroach/certs
+    cockroachdb_container_name: cockroachdb
+    # valid_status_codes:
+    #   - 200
+    #   - 204
+    insecure_start_command:
+      - start
+      - --insecure
+      - "--join={{ root_var.cluster_join }}"
+    insecure_init_command:
+      - /bin/bash
+      - -c
+      - "/cockroach/cockroach init --insecure"
+    start_command:
+      - start
+      - "--certs-dir={{ cockroachdb_docker_certs_dir }}"
+      - "--join={{ root_var.cluster_join }}"
+    init_command:
+      - /bin/bash
+      - -c
+      - "/cockroach/cockroach init"
+
+- name: Create cockroach storage path if not exist
+  file:
+    state: directory
+    path: "{{ root_var.storage_path }}"
+    mode: 0700
+
+- name: Create cockroach certs dir if not exist
+  file:
+    state: directory
+    path: "{{ root_var.cockroach_certs_dir }}"
+    mode: 0700
+
+- name: Determine if we have cert files created yet
+  find:
+    paths: "{{ root_var.cockroach_certs_dir }}"
+    file_type: file
+    use_regex: yes
+    patterns: [".crt$"]
+  register: certs_dir_result
+
+- when: certs_dir_result.matched == 0
+  delegate_to: "{{ vault_ip }}"
+  block:
+    - name: Set cockroach deploy facts
+      set_fact:
+        base_url: "http://{{ vault_ip }}{{ vault_port }}/v1"
+        cockroach_vault_uri_settings: &base_vault_uri_settings_ref
+          method: post
+          body_format: json
+          headers:
+            X-Vault-Token: "{{ root_var.vault.token }}"
+
+    - name: Get CA public cert
+      uri:
+        <<: *base_vault_uri_settings_ref
+        url: "{{ base_url }}{{ root_var.vault.ca_path }}"
+      register: ca_cert_res
+
+    - name: Update node cert request
+      set_fact:
+        node_cert_request: "{{ root_var.node_cert_request | combine({''}) }}"
+
+    - name: Generate node cert/key
+      uri:
+        <<: *base_vault_uri_settings_ref
+        url: "{{ base_url }}{{ root_var.vault.int_pki_mount_point }}/issue/{{ root_var.vault.issue_role }}"
+        body:
+          common_name: node
+
+- name: Import cockroachdb docker task
+  import_role:
+    name: traviss25.pac.docker
+    tasks_from: cockroachdb
+  vars:
+    image: cockroachdb/cockroach:v22.1.9
+    command: "{% if root_var.insecure %}{{ insecure_start_command }}{% else %}{{ start_command }}{% endif %}"
+    action: "{{ root_var.action }}"
+    storage_path: "{{ root_var.storage_path }}"
+    container_name: "{{ cockroachdb_container_name }}"
+    certs_dir: "{{ root_var.cockroach_certs_dir }}"
+    docker_certs_dir: "{{ cockroachdb_docker_certs_dir }}"
+
+- name: Init cluster
+  when: root_var.action != 'stop'
+  community.docker.docker_container_exec:
+    container: "{{ cockroachdb_container_name }}"
+    argv: "{% if root_var.insecure %}{{ insecure_init_command }}{% else %}{{ init_command }}{% endif %}"

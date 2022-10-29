@@ -3,60 +3,74 @@ locals {
     // The following values SHOULD NOT CHANGE!!!
     ///////////////////////////////////////////////////////
 
-    app_name        = "pac"
-    vault_pki_path  = "${local.app_name}-pki"
+    domain                          = "pickacontractor.com"
+    app_name                        = "pac"
+    cert_issuer_policy              = "${local.app_name}-cert-issuer"
+    pac_pki_role                    = local.app_name
+    
+    root_pki_mount_path             = "${local.app_name}/root-pki"
+    int_pki_mount_path              = "${local.app_name}/int-pki"
+    app_role_mount_path             = "${local.app_name}/approle"
+
+    deploy_policy                   = "${local.app_name}-deploy"
+    deploy_token_role               = "${local.app_name}-deploy"
+    deploy_app_role                 = "${local.app_name}-deploy"
+
+    local_token_role                = "local"
+    
+    minio_num_of_drives_per_host    = 4
+    minio_num_of_hosts              = 4
+    minio_size_of_drive             = 20
+
+    minio_app_role                  = local.minio_hostname
+    cockroachdb_cert_app_role       = "${local.cockroachdb_hostname}-cert"
+    prometheus_app_role             = local.prometheus_hostname
+    grafana_app_role                = local.grafana_hostname
+    alertmanager_app_role           = local.alertmanager_hostname
+    vault_app_role                  = local.vault_hostname
+
+    // -----------------------------------------------------
+
+    ///////////////////////////////////////////////////////
+    // The following values can be updated
+    ///////////////////////////////////////////////////////
+
+    root_pki_default_lease_ttl      = "87600h"
+    int_pki_default_lease_ttl       = "43800h"
+    minio_host_sets                 = 1
 
 
     // -----------------------------------------------------
 
-    server_user                 = "server"
-    
-    minio_name                  = "minio"
-    cockroach_name              = "cockroachdb"
+    minio_hostname              = "minio"
+    cockroachdb_hostname        = "cockroachdb"
+    prometheus_hostname         = "prometheus"
+    grafana_hostname            = "grafana"
+    alertmanager_hostname       = "alertmanager"
+    vault_hostname              = "vault"
+    coredns_hostname            = "coredns"
+    node_exporter_hostname      = "node_exporter"
+    redis_hostname              = "redis"
+
+    vault_fqdn                  = "${local.vault_hostname}.${local.domain}"
+
+    minio_pki_name              = "${local.minio_hostname}-pki"
+    cockroachdb_pki_name        = "${local.cockroachdb_hostname}-pki"
+    prometheus_pki_name         = "${local.prometheus_hostname}-pki"
+    grafana_pki_name            = "${local.grafana_hostname}-pki"
+    alertmanager_pki_name       = "${local.alertmanager_hostname}-pki"
+    vault_pki_name              = "${local.vault_hostname}-pki"
+
     server_name                 = "server"
+    server_user                 = "user"
 
-    minio_mount_point           = "/mnt"
+    minio_mount_point           = "/mnt/${local.minio_hostname}"
     storage_mount_point         = "/mnt/storage"
-
-    dns_server_hostname         = "dns-server"
-    dns_server_fqdn             = "${local.dns_server_hostname}.${local.domain}"
-
-    server1_hostname            = "${local.server_name}1"
-    server2_hostname            = "${local.server_name}2"
-    server3_hostname            = "${local.server_name}3"
-    server4_hostname            = "${local.server_name}4"
-
-    server1_fqdn                = "${local.server1_hostname}.${local.domain}"
-    server2_fqdn                = "${local.server2_hostname}.${local.domain}"
-    server3_fqdn                = "${local.server3_hostname}.${local.domain}"
-    server4_fqdn                = "${local.server4_hostname}.${local.domain}"
-
-    cockroach1_hostname         = "${local.cockroach_name}1"
-    cockroach2_hostname         = "${local.cockroach_name}2"
-    cockroach3_hostname         = "${local.cockroach_name}3"
-
-    cockroach1_fqdn             = "${local.cockroach1_hostname}.${local.domain}"
-    cockroach2_fqdn             = "${local.cockroach2_hostname}.${local.domain}"
-    cockroach3_fqdn             = "${local.cockroach3_hostname}.${local.domain}"
-
-    minio1_hostname             = "${local.minio_name}1"
-    minio2_hostname             = "${local.minio_name}2"
-    minio3_hostname             = "${local.minio_name}3"
-    minio4_hostname             = "${local.minio_name}4"
-
-    minio1_fqdn                 = "${local.minio1_hostname}.${local.domain}"
-    minio2_fqdn                 = "${local.minio2_hostname}.${local.domain}"
-    minio3_fqdn                 = "${local.minio3_hostname}.${local.domain}"
-    minio4_fqdn                 = "${local.minio4_hostname}.${local.domain}"
-
-    minio1_path                 = "${local.minio_mount_point}/${local.minio1_hostname}"
-    minio2_path                 = "${local.minio_mount_point}/${local.minio2_hostname}"
-    minio3_path                 = "${local.minio_mount_point}/${local.minio3_hostname}"
-    minio4_path                 = "${local.minio_mount_point}/${local.minio4_hostname}"
 
     alertmanager_config_file    = "/etc/alertmanager/alertmanager.yml"
     prometheus_config_dir       = "/etc/prometheus/"
     coredns_config_file         = "/etc/coredns/Corefile"
+    vault_config_dir            = "/etc/vault/"
 
     home_dir                    = "/home/${local.server_user}"
 
@@ -64,160 +78,244 @@ locals {
     cockroach_certs_dir         = "${local.home_dir}/.cockroach-certs"
     minio_certs_dir             = "${local.home_dir}/.minio/certs"
 
-    minio_key                   = {
-        dir_path    = local.minio_certs_dir
-        filename    = "private.key"
-    }
+    root_pki_ca_url_path        = "/${local.root_pki_mount_path}/cert/ca"
+    root_pki_crl_url_path       = "/${local.root_pki_mount_path}/cert/crl"
 
-    minio_cert                  = {
-        dir_path    = local.minio_certs_dir
-        filename    = "public.crt"
-    }
-
-    cockroach_node_cert         = {
-        dir_path    = local.cockroach_certs_dir
-        filename    = "node.crt"
-    }
-
-    cockroach_node_key          = {
-        dir_path    = local.cockroach_certs_dir
-        filename    = "node.key"
-    }
-
-    cockroach_client_cert       = {
-        dir_path    = local.cockroach_certs_dir
-        filename    = "client.${local.server_user}.crt"
-    }
-
-    cockroach_client_key        = {
-        dir_path    = local.cockroach_certs_dir
-        filename    = "client.${local.server_user}.key"
-    }
-
-    default_cockroach_node_tls  = {
-        cert    = local.cockroach_node_cert
-        key     = local.cockroach_node_key
-        csr     = {
-            dir_path    = local.csr_dir
-            filename    = "node.csr"
+    vault_settings              = {
+        fqdn            = local.vault_fqdn
+        port            = ":8200"
+        token           = var.vault_token
+        cert_settings   = {
+            ca_url_path         = local.root_pki_ca_url_path
+            issue_role          = local.app_name
+            int_pki_mount_path  = local.int_pki_mount_path 
         }
     }
 
-    default_cockroach_client_tls    = {
-        cert    = local.cockroach_client_cert
-        key     = local.cockroach_client_key
-        csr     = {
-            dir_path    = local.csr_dir
-            filename    = "client.csr"
-        }
-    }
+    # vault_cert_settings              = {
+    #     issue_role          = local.app_name
+    #     int_pki_mount_point = local.int_pki_mount_path
+    #     ca_url_path         = local.root_pki_ca_url_path
+    # }
 
-    default_minio_tls           =  {
-        cert    = local.minio_cert
-        key     = local.minio_key
-        csr     = {
-            dir_path    = local.csr_dir
-            filename    = "minio.csr"
-        }
-    }                 
-
-    coredns_docker              = {
-        name        = "coredns"
+    coredns_deploy              = {
+        name        = local.coredns_hostname
         root_var    = {
-            action      = "start"
+            action      = "restart"
             config_file = local.coredns_config_file
         }
     }
 
-    minio_docker                = {
-        name        = "minio"
+    minio_deploy                = {
+        name        = local.minio_hostname
         root_var    = {
-            hostname            = local.minio_name
-            action              = "start"
-            storage_path        = "${local.minio_mount_point}${local.minio_name}"
-            protocol            = "http"
+            hostname            = local.minio_hostname
+            action              = "restart"
+            storage_path        = local.minio_mount_point
+            protocol            = "https"
             distributed_mode    = {
-                num_of_drives   = 4
-                num_of_hosts    = 4
+                num_of_drives   = local.minio_num_of_drives_per_host
+                num_of_hosts    = local.minio_num_of_hosts
             }
         }
     }
 
-    node_exporter_docker        = {
-        name        = "node_exporter"
+    node_exporter_deploy        = {
+        name        = local.node_exporter_hostname
         root_var    = {
-            action          = "start"
-            storage_path    = "${local.storage_mount_point}/node_exporter"
+            action          = "restart"
+            storage_path    = "${local.storage_mount_point}/${local.node_exporter_hostname}"
         }
     }
 
-    grafana_docker              = {
-        name        = "grafana"
+    grafana_deploy              = {
+        name        = local.grafana_hostname
         root_var    = {
-            action          = "start"
-            storage_path    = "${local.storage_mount_point}/grafana"
+            action          = "restart"
+            storage_path    = "${local.storage_mount_point}/${local.grafana_hostname}"
         }
     }
 
-    prometheus_docker           = {
-        name        = "grafana"
+    prometheus_deploy           = {
+        name        = local.prometheus_hostname
         root_var    = {
-            action          = "start"
-            storage_path    = "${local.storage_mount_point}/promethues"
+            action          = "restart"
+            storage_path    = "${local.storage_mount_point}/${local.prometheus_hostname}"
             config_dir      = local.prometheus_config_dir
         }
     }
 
-    subset_cockroachdb_docker   = {
-        action          = "start"
-        storage_path    = "${local.storage_mount_point}/cockroachdb"
-        start_command   = "start --insecure --join=192.168.3.5,192.168.3.6,192.168.3.7"
-    }
-
-    start_cockroachdb_docker    = {
-        name        = "${local.cockroach_name}"
-        root_var    = local.subset_cockroachdb_docker
-    }
-
-    init_cockroachdb_docker     = {
-        name        = "${local.cockroach_name}"
-        root_var    = "${merge(local.subset_cockroachdb_docker, tomap({"init_command" = "init --insecure"}))}"
-    }
-
-    alertmanager_docker         = {
-        name        = "alertmanager"
+    cockroachdb_deploy    = {
+        name        = local.cockroachdb_hostname
         root_var    = {
-            action         = "start"
+            action              = "restart"
+            storage_path        = "${local.storage_mount_point}/${local.cockroachdb_hostname}"
+            cockroach_certs_dir = local.cockroach_certs_dir
+            vault               = local.vault_settings
+            node_cert_request   = {
+                common_name     = "node"
+                alt_names       = "${local.cockroachdb_hostname}.${local.domain}"
+            }
+        }
+    }
+
+    alertmanager_deploy         = {
+        name        = local.alertmanager_hostname
+        root_var    = {
+            action         = "restart"
             config_file    = local.alertmanager_config_file
         }
     }
 
-    redis_docker                = {
-        name        = "redis"
+    redis_deploy                = {
+        name        = local.redis_hostname
         root_var    = {
-            action  = "start"
+            action  = "restart"
         }
     }
 
-    vault_settings              = {
-        pki_path    = "${local.vault_pki_path}"
-        policies    = [
-            {
-                name    = "cert-pki"
-                rule    = <<-EOT
-                    path "${local.vault_pki_path}/+/${local.cockroach_name}" {
-                        capabilities = ["create", "read", "update", "patch", "delete", "list"]
+    vault_deploy                = {
+        name        = local.vault_hostname
+        root_var    = {
+            action                  = "restart"
+            host                    = "http://localhost:8200"
+            local_keys_file_store   = pathexpand("~/.vault-keys")
+            local_tokens_file_store = pathexpand("~/.vault-tokens")
+            config_dir              = local.vault_config_dir
+            storage_path            = "${local.storage_mount_point}/${local.vault_hostname}"
+            pki_settings            = {
+                root                = {
+                    mount_path      = local.root_pki_mount_path
+                    mount_api       = {
+                        description             = "Pac root cert engine"
+                        config                  = {
+                            default_lease_ttl   = local.root_pki_default_lease_ttl
+                            max_lease_ttl       = local.root_pki_default_lease_ttl
+                            force_no_cache      = true
+                        }
                     }
-                EOT
-            },
-            {
-                name    = "${local.cockroach_name}-pki"
-                rule    = <<-EOT
-                    path "${local.vault_pki_path}/+/${local.cockroach_name}" {
-                        capabilities = ["create", "read", "update", "patch", "delete", "list"]
+                    cert_api        = {
+                        common_name             = local.domain
                     }
-                EOT
-            },
-        ]
+                    url_api         = {
+                        issuing_certificates    = ["http://${local.vault_fqdn}${local.root_pki_ca_url_path}"]
+                        crl_distribution_points = ["http://${local.vault_fqdn}${local.root_pki_crl_url_path}"]
+                    }
+                    role_api        = {
+                        role_name               = "pac"
+                        ttl                     = local.root_pki_default_lease_ttl
+                        allowed_domains         = [local.domain]
+                    }
+                }
+                int                 = {
+                    mount_path      = local.int_pki_mount_path
+                    mount_api       = {
+                        description             = "Pac intermediate cert engine"
+                        config                  = {
+                            default_lease_ttl   = local.int_pki_default_lease_ttl
+                            max_lease_ttl       = local.int_pki_default_lease_ttl
+                            force_no_cache      = true
+                        }
+                    }
+                    cert_api        = {
+                        common_name             = local.domain
+                    }
+                    sign_cert_api   = {
+                        common_name             = local.domain
+                    }
+                    url_api         = {
+                        issuing_certificates    = ["http://${local.vault_fqdn}/v1/${local.int_pki_mount_path}/ca"]
+                        crl_distribution_points = ["http://${local.vault_fqdn}/v1/${local.int_pki_mount_path}/crl"]
+                    }
+                    role_api        = {
+                        role_name               = "pac"
+                        ttl                     = local.int_pki_default_lease_ttl
+                        allowed_domains         = [local.domain]
+                    }
+                }
+            }
+            app_role_settings    = {
+                mount_path      = local.app_role_mount_path
+                roles           = [
+                    {
+                        role_name               = local.cockroachdb_cert_app_role
+                        secret_id_bound_cidrs   = [
+                            127.0.0.1/32
+                        ]
+                        policies                = [
+                            local.cert_issuer_policy
+                        ]
+                    }
+                ]
+            }
+            policy_settings      = {
+                policies        = [
+                    {
+                        name      = local.deploy_policy
+                        policy    = <<-EOT
+                            path "${local.app_name}/*" {
+                                capabilities = ["create", "read", "update", "patch", "delete", "list"]
+                            }
+
+                            path "${local.app_name}/${local.root_pki_mount_path}/*" {
+                                capabilities = ["read"]
+                            }
+                        EOT
+                    },
+                    # {
+                    #     name      = local.cert_issuer_policy
+                    #     policy    = <<-EOT
+                    #         path "${local.int_pki_mount_path}/issue/${local.pac_pki_role}/*" {
+                    #             capabilities = ["create"]
+                    #         }
+                    #     EOT
+                    # },
+                ]
+            }
+            token_settings      = {
+                roles   = [
+                    {
+                        role_name           = local.local_token_role
+
+                        // This will eventually be dynamic where only the vault server
+                        // ip addresses will be set
+                        token_bound_cidrs   = [
+                            192.168.4.0/24,
+                        ]
+                    }
+                ]
+                tokens   = [
+                    {
+                        role_name           = local.local_token_role
+                        display_name        = "pac"
+                        policies    = [
+                            local.deploy_policy
+                        ]
+                    },
+                ]
+            }
+            # policies    = [
+            #     {
+            #         name      = local.deploy_policy
+            #         policy    = <<-EOT
+            #             path "${local.app_name}/*" {
+            #                 capabilities = ["create", "read", "update", "patch", "delete", "list"]
+            #             }
+
+            #             path "auth/token/create" {
+            #                 capabilities = ["create", "read", "update", "patch", "delete", "list"]
+            #             }
+            #         EOT
+            #     },
+            #     {
+            #         name      = local.cert_issuer_policy
+            #         policy    = <<-EOT
+            #             path "${local.int_pki_mount_path}/issue/${local.pac_pki_role}/*" {
+            #                 capabilities = ["create"]
+            #             }
+            #         EOT
+            #     },
+            # ]
+        }
     }
 }

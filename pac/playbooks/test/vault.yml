@@ -1,0 +1,79 @@
+---
+- name: Testing vault settings
+  hosts: localhost
+
+  tasks:
+    - name: Run vault deploy
+      import_role:
+        name: traviss25.pac.deploy
+        tasks_from: vault
+      vars:
+        root_var:
+          host: http://localhost:8200
+          keys_file: /home/travis/docker-testing/vault/vault-keys
+          tokens_file: /home/travis/docker-testing/vault/vault-tokens
+          config_dir: /home/travis/docker-testing/vault/config
+          storage_path: /home/travis/docker-testing/vault/data
+          root_pki:
+            role_name: pac
+            role_ttl: 8760h
+            mount_path: pac/root-pki
+            common_name: pacdev.com
+            allowed_domains:
+              - pacdev.com
+            max_lease_ttl: 87600h
+            issuing_certificates:
+              - http://vault.pacdev.com:8200/v1/pac-root-pki/ca
+            crl_distribution_points:
+              - http://vault.pacdev.com:8200/v1/pac-root-pki/crl
+          int_pki:
+            role_name: pac
+            role_ttl: 8760h
+            mount_path: pac/int-pki
+            common_name: pacdev.com
+            allowed_domains:
+              - pacdev.com
+            max_lease_ttl: 43800h
+            issuing_certificates:
+              - http://vault.pacdev.com:8200/v1/pac-int-pki/ca
+            crl_distribution_points:
+              - http://vault.pacdev.com:8200/v1/pac-int-pki/crl
+          # app_role_settings:
+          #   mount_path: pac/approle
+          #   roles:
+          #     - role_name:
+          token_settings:
+            roles:
+              - role_name: localhost
+                token_bound_cidrs:
+                  - 192.168.1.0/24
+              - role_name: dummy
+                # token_bound_cidrs:
+                #   - 127.0.0.1/32
+            tokens:
+              - role_name: localhost
+                display_name: pac
+                policies:
+                  - pac-deploy
+              - role_name: dummy
+                display_name: foo
+                policies:
+                  - pac-deploy
+
+          policy_settings:
+            policies:
+              - name: pac-deploy
+                policy: |
+                  path "pac/*" {
+                    capabilities = ["create", "read", "update", "patch", "delete", "list"]
+                  }
+
+                  path "auth/token/create/" {
+                    capabilities = ["create", "read", "update", "patch", "delete", "list"]
+                  }
+
+              - name: pac-cert-issuer
+                policy: |
+                  path "pac/int_pki/issue/pac/*" {
+                    capabilities = ["create"]
+                  }

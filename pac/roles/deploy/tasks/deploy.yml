@@ -1,0 +1,39 @@
+---
+- name: Set base deploy facts
+  set_fact:
+    deploy_tag_dict: {}
+    ip_list: []
+
+- name: Install docker {% if preflight %}preflight{% endif %}
+  import_role:
+    name: traviss25.util.docker
+    tasks_from: "{% if preflight %}install_preflight{% else %}install{% endif %}"
+  vars:
+    users:
+      - "{{ droplet.user }}"
+
+- name: Grab ips for deploy tags
+  loop: "{{ droplets | subelements('tags') }}"
+  vars:
+    updated_list: "{{ deploy_tag_dict[item.1] | default([]) }}"
+  set_fact:
+    deploy_tag_dict: "{{ deploy_tag_dict | combine({item.1: updated_list + [droplet.ip]}) }}"
+    ip_list: "{{ ip_list + [droplet.ip] | unique }}"
+
+- name: Deploy tag {% if preflight %}preflight{% endif %}
+  loop: "{{ droplet.tags }}"
+  include_role:
+    name: traviss25.pac.deploy
+    tasks_from: "{% if preflight %}deploy_tag_preflight{% else %}deploy_tag{% endif %}"
+  vars:
+    droplet: "{{ droplet }}"
+    deploy_tag_dict: "{{ deploy_tag_dict }}"
+    tag: "{{ item }}"
+    deploy_settings: "{{ deploy_settings }}"
+
+- name: Create inventory template file
+  when: prod and not preflight
+  template:
+    src: inventory.j2
+    dest: "{{ role_path }}../../inventory/pac.ini"
+    mode: 0700

@@ -5,21 +5,22 @@
   tasks:
     - name: Set playbook facts
       set_fact:
-        config: {
-          terraform: {
-            output_config_file: /tmp/pac_terraform_config.json,
-            local_vars: {
-              root_var: {}
-            } 
+        deploy_droplets: []
+        config:
+          {
+            terraform:
+              {
+                output_config_file: /tmp/pac_terraform_config.json,
+                local_vars: { root_var: {} },
+              },
           }
-        }
 
     - name: Set config file
       when: config_file is defined
       set_fact:
         config: "{{ lookup('file', config_file) }}"
 
-    - name: Terraform prelight
+    - name: Terraform preflight
       import_role:
         name: traviss25.pac.terraform
         tasks_from: main_preflight
@@ -42,22 +43,19 @@
           set_fact:
             output_config_content: "{{ lookup('file', config.terraform.output_config_file) | from_json }}"
 
-        - name: Set droplet settings
+        - name: Set droplets facts
           set_fact:
             droplets: "{{ output_config_content.output_changes.local_config.after.droplets }}"
+            deploy_settings: "{{ output_config_content.output_changes.local_config.after.deploy_settings }}"
 
-        - name: Droplet preflights
+        - name: Deploy droplets preflights
           loop: "{{ droplets }}"
           include_role:
-            name: traviss25.pac.droplet
-            tasks_from: local
-            apply:
-              delegate_to: "{{ item.ip }}"
-              become: true
-              remote_user: "{{ item.user }}"
+            name: traviss25.pac.deploy
+            tasks_from: deploy
           vars:
-            preflight: true
             droplet: "{{ item }}"
+            deploy_settings: "{{ deploy_settings }}"
 
         - name: Run apply terraform
           import_role:
@@ -70,4 +68,18 @@
       rescue:
         - debug:
             msg: "Terraform plan was NOT applied!"
-      
+
+    - name: Deploy droplets
+      loop: "{{ droplets }}"
+      include_role:
+        name: traviss25.pac.deploy
+        tasks_from: deploy
+        apply:
+          delegate_to: "{{ item.0.ip }}"
+          delegate_facts: true
+          become: true
+          remote_user: "{{ item.0.user }}"
+      vars:
+        preflight: false
+        droplet: "{{ item }}"
+        deploy_settings: "{{ deploy_settings }}"

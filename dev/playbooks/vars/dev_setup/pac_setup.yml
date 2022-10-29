@@ -10,7 +10,7 @@ ca_server_ip: &ca_server_ip_ref 192.168.2.2
 ca_server_hostname: &ca_server_hostname_ref ca-server
 
 dns_server_ip: &dns_server_ip_ref 192.168.2.3
-dns_server_hostname: &dns_server_hostname_ref dns-server
+dns_hostname: &dns_server_hostname_ref dns-server
 
 pac_server1_ip: &pac_server1_ip_ref 192.168.2.4
 server1_hostname: &pac_server1_hostname_ref pac-server1

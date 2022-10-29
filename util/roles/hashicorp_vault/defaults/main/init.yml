@@ -1,0 +1,5 @@
+---
+init_defaults:
+  secret_shares: 10
+  secret_threshold: 5
+  host: http://localhost:8200

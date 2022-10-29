@@ -1,5 +1,5 @@
 locals {
-    domain                      = "pacdev.com"
+    # domain                      = "pacdev.com"
 
     minio_disk_size             = 1
 
@@ -68,31 +68,6 @@ locals {
         }
     }
 
-    host_config                 = {
-        "${var.dns_server_ip}"    = [
-            "${local.dns_server_hostname}.${local.domain}",
-        ],
-        "${var.pac_server1_ip}"   = [
-            "${local.minio1_fqdn}",
-            "${local.server1_hostname}.${local.domain}",
-        ],
-        "${var.pac_server2_ip}"   = [
-            "${local.minio2_fqdn}",
-            "${local.server2_hostname}.${local.domain}",
-            "${local.cockroach1_fqdn}",
-        ],
-        "${var.pac_server3_ip}"   = [
-            "${local.minio3_fqdn}",
-            "${local.server3_hostname}.${local.domain}",
-            "${local.cockroach2_fqdn}",
-        ],
-        "${var.pac_server4_ip}"   = [
-            "${local.minio4_fqdn}",
-            "${local.server4_hostname}.${local.domain}",
-            "${local.cockroach3_fqdn}",
-        ],
-    }
-
     disk_droplets   = [
         {
             ip                  = var.pac_server1_ip
@@ -100,26 +75,13 @@ locals {
             user                = local.server_user
             cloud_init          = local.cloud_init
             specs               = local.minio_server_specs
-            vault               = {
-                policy  = {
-
-                }
-                pki     = {
-
-                }
-            }
-            tls                 = [
-                merge(local.default_minio_tls, {
-                    common_name         = local.server1_fqdn
-                    subject_alt_names   = ["DNS:${local.minio1_fqdn}"]
-                }),
-            ]
-            docker_containers   = [
-                local.alertmanager_docker,
-                local.node_exporter_docker,
-                local.grafana_docker,
-                local.prometheus_docker,
-                local.minio_docker,
+            deploy   = [
+                local.vault_deploy,
+                local.alertmanager_deploy,
+                local.node_exporter_deploy,
+                local.grafana_deploy,
+                local.prometheus_deploy,
+                local.minio_deploy,
             ]
         },
         # {
@@ -142,10 +104,10 @@ locals {
         #             subject_alt_names   = ["DNS:${local.cockroach1_fqdn}"]
         #         }),
         #     ]
-        #     docker_containers   = [
-        #         local.node_exporter_docker,
-        #         local.init_cockroachdb_docker,
-        #         local.minio_docker,
+        #     deploy   = [
+        #         local.node_exporter_deploy,
+        #         local.init_cockroachdb_deploy,
+        #         local.minio_deploy,
         #     ]
         # },
         # {
@@ -168,10 +130,10 @@ locals {
         #             subject_alt_names   = ["DNS:${local.cockroach2_fqdn}"]
         #         }),
         #     ]
-        #     docker_containers   = [
-        #         local.node_exporter_docker,
-        #         local.start_cockroachdb_docker,
-        #         local.minio_docker,
+        #     deploy   = [
+        #         local.node_exporter_deploy,
+        #         local.cockroachdb_deploy,
+        #         local.minio_deploy,
         #     ]
         # },
         # {
@@ -194,10 +156,10 @@ locals {
         #             subject_alt_names   = ["DNS:${local.cockroach3_fqdn}"]
         #         }),
         #     ]
-        #     docker_containers   = [
-        #         local.node_exporter_docker,
-        #         local.start_cockroachdb_docker,
-        #         local.minio_docker,
+        #     deploy   = [
+        #         local.node_exporter_deploy,
+        #         local.cockroachdb_deploy,
+        #         local.minio_deploy,
         #     ]
         # }
     ]           
@@ -205,12 +167,12 @@ locals {
     misc_droplets   = [
         {
             ip                  = var.dns_server_ip
-            hostname            = local.dns_server_hostname
+            hostname            = local.dns_hostname
             user                = local.server_user
             cloud_init          = local.cloud_init
             specs               = local.specs
-            docker_containers   = [
-                local.coredns_docker
+            deploy   = [
+                local.coredns_deploy
             ]
         },
     ]

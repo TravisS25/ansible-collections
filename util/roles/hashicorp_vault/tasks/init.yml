@@ -1,0 +1,63 @@
+---
+- name: Set base vault deploy facts
+  set_fact:
+    secret_shares: "{{ secret_shares | default(init_defaults.secret_shares) }}"
+    secret_threshold: "{{ secret_threshold | default(init_defaults.secret_threshold) }}"
+    base_url: "{{ host }}/v1"
+    tmp_keys_file: /tmp/keys.json
+
+- name: Determine if vault is initialized
+  uri:
+    url: "{{ base_url }}/sys/init"
+    body_format: json
+    method: get
+  register: vault_init_result
+
+- when: not vault_init_result.json.initialized
+  block:
+    - name: Initialize vault
+      uri:
+        url: "{{ base_url }}/sys/init"
+        body_format: json
+        method: post
+        body:
+          secret_shares: "{{ secret_shares }}"
+          secret_threshold: "{{ secret_threshold }}"
+      register: vault_keys_result
+
+    - name: Write keys to temp file
+      copy:
+        content: "{{ vault_keys_result.json }}"
+        dest: "{{ tmp_keys_file }}"
+
+    - name: Write key content to current host
+      fetch:
+        flat: true
+        src: "{{ tmp_keys_file }}"
+        dest: "{{ local_keys_file_store }}"
+
+    - name: Remove temp keys file
+      file:
+        path: "{{ tmp_keys_file }}"
+        state: absent
+
+    - name: Loop through keys list and unseal vault
+      loop: "{{ range(0, secret_threshold) }}"
+      loop_control:
+        index_var: idx
+      uri:
+        url: "{{ base_url }}/sys/unseal"
+        method: post
+        body_format: json
+        body:
+          key: "{{ vault_keys_result.json['keys'][idx] }}"
+
+    - name: Set vault init facts for playbook
+      set_fact:
+        vault_token: "{{ vault_keys_result.json['root_token'] }}"
+        was_vault_initialized: false
+
+- name: Vault already initialized
+  when: vault_init_result.json.initialized
+  set_fact:
+    was_vault_initialized: true

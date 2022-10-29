@@ -1,7 +1,0 @@
----
-cockroachdb_certs_defaults:
-  ca:
-    cert_dir: /etc/cockroachdb/certs
-    key_dir: /etc/cockroachdb/key
-    overwrite_ca_if_exists: false
-

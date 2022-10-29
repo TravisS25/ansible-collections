@@ -1,0 +1,22 @@
+---
+- name: Update policies
+  loop: "{{ policy_settings.policies }}"
+  uri:
+    url: "{{ base_url }}/sys/policy/{{ item.name }}"
+    method: post
+    body_format: json
+    status_code: "{{ valid_status_codes }}"
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    body: "{{ item }}"
+
+- name: Update token roles
+  loop: "{{ token_settings.roles }}"
+  uri:
+    url: "{{ base_url }}/auth/token/roles/{{ item.role_name }}"
+    method: post
+    body_format: json
+    status_code: "{{ valid_status_codes }}"
+    headers:
+      X-Vault-Token: "{{ vault_token }}"
+    body: "{{ item }}"

@@ -1,0 +1,59 @@
+---
+- name: Random stuff
+  hosts: localhost
+
+  # hosts: test
+  # become: true
+  # remote_user: user
+
+  tasks:
+    - name: Set facts
+      set_fact:
+        list:
+          - 1
+          - 2
+
+    - name: update here
+      vars:
+        list: "{{ list + [3] }}"
+      debug:
+        msg: "foo"
+
+    - name: print stuff
+      debug:
+        msg: "{{ list }}"
+
+    # - name: Gather the package facts
+    #   package_facts:
+    #     manager: auto
+    # - name: Display info
+    #   debug:
+    #     msg: "{{ ansible_default_ipv4.address }}"
+    # - name: Get hostname
+    #   shell: hostname
+    #   register: name
+    # - name: Display hostname
+    #   debug:
+    #     msg: "{{ name.stdout }}"
+
+    # - delegate_to: 192.168.4.2
+    #   become: true
+    #   remote_user: user
+    #   delegate_facts: true
+    #   block:
+    #     - name: Gather the package facts
+    #       package_facts:
+    #         manager: auto
+    #     - name: Display hostvars
+    #       debug:
+    #         msg: "{{ hostvars['192.168.4.2'] }}"
+
+    # - name: Display info
+    #   debug:
+    #     msg: "{{ ansible_default_ipv4.address }}"
+    # - name: Get hostname
+    #   shell: hostname
+    #   register: name
+    # - name: Display hostname
+    #   debug:
+    #     msg: "{{ name.stdout }}"

@@ -1,4 +1,0 @@
----
-- name: Assert that secret_shares is equal or greater than secret_threshold
-  assert:
-    that: secret_shares >= secret_threshold

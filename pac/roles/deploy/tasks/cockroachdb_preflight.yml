@@ -1,0 +1,6 @@
+---
+- name: Assert proper vault settings are defined
+  assert:
+    that:
+      - vault.ca_path is defined
+      - vault.int_pki_mount_path is defined

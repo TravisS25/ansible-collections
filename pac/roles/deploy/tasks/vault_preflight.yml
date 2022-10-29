@@ -1,0 +1,8 @@
+---
+- name: Import vault init preflight
+  import_role:
+    name: traviss25.pac.vault
+    tasks_from: deploy_preflight
+  vars:
+    secret_shares: "{{ secret_shares | default(omit) }}"
+    secret_threshold: "{{ secret_threshold | default(omit) }}"

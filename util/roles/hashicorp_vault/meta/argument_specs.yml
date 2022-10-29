@@ -1,0 +1,26 @@
+---
+init_options: &init_options_ref
+  host:
+    type: str
+    default: http://localhost:8200
+    description: Host vault is being served from
+  local_keys_file_store:
+    type: str
+    required: true
+    description: Absolute file path on controller host to store vault root keys and unseal keys info
+  secret_shares:
+    type: int
+    default: 10
+    description: Number of secret shares to create to regenerate root key
+  secret_threshold:
+    type: int
+    default: 5
+    description: Number of unseal keys needed to unseal vault
+
+argument_specs:
+  init:
+    short_description: Init vault server
+    options: *init_options_ref
+  init_preflight:
+    short_description: Preflight vault init
+    options: *init_options_ref

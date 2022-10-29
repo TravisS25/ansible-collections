@@ -1,0 +1,103 @@
+---
+- name: Testing vault settings
+  hosts: localhost
+
+  tasks:
+    - delegate_to: 192.168.4.2
+      become: true
+      remote_user: user
+      block:
+        - name: Install docker
+          import_role:
+            name: traviss25.util.docker
+            tasks_from: install
+          vars:
+            users:
+              - user
+
+        - name: Run vault deploy
+          import_role:
+            name: traviss25.pac.deploy
+            tasks_from: vault
+          vars:
+            root_var:
+              host: http://localhost:8200
+              keys_file: /home/travis/docker-testing/vault/vault-keys
+              tokens_file: /home/travis/docker-testing/vault/vault-tokens
+              config_dir: /home/user/vault/config
+              storage_path: /home/user/vault/data
+              pki_settings:
+                root:
+                  mount_path: pac/root-pki
+                  mount_api:
+                    description: Pac root cert engine
+                    config:
+                      default_lease_ttl: 87600h
+                      force_no_cache: true
+                  cert_api:
+                    common_name: pickacontractor.com
+                  url_api:
+                    issuing_certificates:
+                      - http://vault.pickacontractor.com/v1/pac/root-pki/ca
+                    crl_distribution_points:
+                      - http://vault.pickacontractor.com/v1/pac/root-pki/crl
+                  role_api:
+                    role_name: pac
+                    ttl: 87600h
+                    allowed_domains:
+                      - pickacontractor.com
+                int:
+                  mount_path: pac/int-pki
+                  mount_api:
+                    description: Pac intermediate cert engine
+                    config:
+                      default_lease_ttl: 43800h
+                      force_no_cache: true
+                  cert_api:
+                    common_name: pickacontractor.com
+                  sign_cert_api:
+                    common_name: pickacontractor.com
+                  url_api:
+                    issuing_certificates:
+                      - http://vault.pickacontractor.com/v1/pac/int-pki/ca
+                    crl_distribution_points:
+                      - http://vault.pickacontractor.com/v1/pac/int-pki/crl
+                  role_api:
+                    role_name: pac
+                    ttl: 43800h
+                    allowed_domains:
+                      - pickacontractor.com
+              token_settings:
+                roles:
+                  - role_name: localhost
+                    token_bound_cidrs:
+                      - 192.168.4.2/32
+                  - role_name: dummy
+                    # token_bound_cidrs:
+                    #   - 127.0.0.1/32
+                tokens:
+                  - role_name: localhost
+                    display_name: pac
+                    policies:
+                      - pac-deploy
+                  - role_name: dummy
+                    display_name: foo
+                    policies:
+                      - pac-deploy
+              policy_settings:
+                policies:
+                  - name: pac-deploy
+                    policy: |
+                      path "pac/*" {
+                        capabilities = ["create", "read", "update", "patch", "delete", "list"]
+                      }
+
+                      path "pac/root-pki/*" {
+                        capabilities = ["read"]
+                      }
+
+                  - name: pac-cert-issuer
+                    policy: |
+                      path "pac/int_pki/issue/pac/*" {
+                        capabilities = ["create"]
+                      }

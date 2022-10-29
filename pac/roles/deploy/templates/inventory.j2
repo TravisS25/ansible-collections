@@ -1,0 +1,14 @@
+[all]
+
+{% for ip in ip_list %}
+{{ ip }}
+{% endfor %}
+
+{% for group, ips in deploy_tag_dict.items() %}
+[{{ group }}]
+
+{% for ip in ips %}
+{{ ip }}
+{% endfor %}
+
+{% endfor %}

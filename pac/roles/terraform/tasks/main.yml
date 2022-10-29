@@ -3,8 +3,8 @@
   set_fact:
     #updated_droplets: []
     pac_tf_backend_config: {}
-    pac_tf_root_path: ''
-    pac_tf_current_state_file: ''
+    pac_tf_root_path: ""
+    pac_tf_current_state_file: ""
     pac_tf_variable_files: ["/tmp/pac_terraform.tfvars"]
     pac_tf_targets: "{{ targets | default([]) }}"
     pac_tf_workspace: "{{ workspace | default(main_defaults.workspace) }}"
@@ -59,7 +59,7 @@
       template:
         src: local_tfvars.j2
         dest: "{{ pac_tf_variable_files[0] }}"
-        mode: 0600
+        mode: 0700
       vars:
         root_var: "{{ local_vars.root_var }}"
 
@@ -101,10 +101,12 @@
           register: tf_run
 
         - name: Create output settings from terraform plan
-          shell: 
-            cmd: "terraform show -json {{ pac_tf_plan_file }} > {{ output_config_file }}" 
+          shell:
+            cmd: "terraform show -json {{ pac_tf_plan_file }} > {{ output_config_file }}"
             chdir: "{{ pac_tf_root_path }}"
 
+        # Update this later to potentially use terraform graph library instead of print to stdout
+        # https://github.com/im2nguyen/rover
         - name: Print terraform plan
           debug: var=tf_run.stdout_lines
 
@@ -133,7 +135,7 @@
   #     file:
   #       path: "{{ pac_tf_tfvars_file }}"
   #       state: absent
-    
+
   #   - name: Remove plan file if exists
   #     file:
   #       path: "{{ pac_tf_plan_file }}"

@@ -1,0 +1,34 @@
+---
+- name: Set cockroachdb container facts
+  set_fact:
+    cockroachdb_container_params: &cockroachdb_container_params_ref
+      name: "{{ container_name }}"
+      hostname: cockroachdb
+      image: "{{ image }}"
+      restart_policy: always
+      publish_all_ports: yes
+      ports:
+        - 8080:8080
+        - 26257:26257
+      command: "{{ command }}"
+      volumes:
+        - "{{ storage_path }}:/cockroach/cockroach-data"
+        - "{{ certs_dir }}:{{ docker_certs_dir }}"
+
+- name: Start container
+  when: action == 'start'
+  community.docker.docker_container:
+    <<: *cockroachdb_container_params_ref
+
+- name: Restart container
+  when: action == 'restart'
+  community.docker.docker_container:
+    state: started
+    restart: yes
+    <<: *cockroachdb_container_params_ref
+
+- name: Stop container
+  when: action == 'stop'
+  community.docker.docker_container:
+    state: stopped
+    <<: *cockroachdb_container_params_ref
