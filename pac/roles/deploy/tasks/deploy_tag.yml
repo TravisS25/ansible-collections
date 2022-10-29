@@ -12,10 +12,6 @@
 
 - when: tag == 'cockroachdb'
   block:
-    - name: Set base cockroachdb facts
-      set_fact:
-        cockroachdb_join_list: []
-
     - name: Update cert requests
       vars:
         node_cert_request: "{{ deploy_vars['node_cert_request'] | combine({'ip_sans': droplet.ip}) }}"
@@ -23,4 +19,4 @@
       set_fact:
         deploy_vars: "{{ deploy_vars | combine({'node_cert_request': node_cert_request, 'client_cert_request': client_cert_request}, recursive=true) }}"
 
-    - name: Grab cockroachdb
+    - name:
