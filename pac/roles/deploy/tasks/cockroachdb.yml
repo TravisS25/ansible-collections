@@ -1,10 +1,11 @@
 ---
 - name: Set fact for cockroachdb deploy
   set_fact:
-    vault_ip: "{{ lookup('dig', root_var.vault.fqdn) }}"
     vault_port: "{{ root_var.vault.port | default(all_defaults.vault_port) }}"
     cockroachdb_docker_certs_dir: /cockroach/certs
     cockroachdb_container_name: cockroachdb
+    tmp_node_cert_file: /tmp/node-cert.json
+    tmp_client_cert_file: /tmp/client-cert.json
     # valid_status_codes:
     #   - 200
     #   - 204
@@ -46,11 +47,11 @@
   register: certs_dir_result
 
 - when: certs_dir_result.matched == 0
-  delegate_to: "{{ vault_ip }}"
+  delegate_to: "{{ root_var.vault.ip }}"
   block:
     - name: Set cockroach deploy facts
       set_fact:
-        base_url: "http://{{ vault_ip }}{{ vault_port }}/v1"
+        base_url: "http://{{ root_var.vault.ip }}{{ vault_port }}/v1"
         cockroach_vault_uri_settings: &base_vault_uri_settings_ref
           method: post
           body_format: json
@@ -60,19 +61,29 @@
     - name: Get CA public cert
       uri:
         <<: *base_vault_uri_settings_ref
-        url: "{{ base_url }}{{ root_var.vault.ca_path }}"
+        url: "{{ base_url }}{{ root_var.vault.cert_settings.int_pki_mount_point }}/cert/ca"
       register: ca_cert_res
-
-    - name: Update node cert request
-      set_fact:
-        node_cert_request: "{{ root_var.node_cert_request | combine({''}) }}"
 
     - name: Generate node cert/key
       uri:
         <<: *base_vault_uri_settings_ref
         url: "{{ base_url }}{{ root_var.vault.int_pki_mount_point }}/issue/{{ root_var.vault.issue_role }}"
-        body:
-          common_name: node
+        body: "{{ root_var.node_cert_request }}"
+      register: node_cert_res
+
+    - name: Generate user cert/key
+      uri:
+        <<: *base_vault_uri_settings_ref
+        url: "{{ base_url }}{{ root_var.vault.int_pki_mount_point }}/issue/{{ root_var.vault.issue_role }}"
+        body: "{{ root_var.client_cert_request }}"
+      register: user_cert_res
+
+    - name: Write
+
+    - name: Copy client cert to temp file
+      copy:
+        content: "{{ client_cert_res }}"
+        dest: "{{ tmp_client_cert_file }}"
 
 - name: Import cockroachdb docker task
   import_role:

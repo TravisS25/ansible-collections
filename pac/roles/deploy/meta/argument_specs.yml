@@ -76,10 +76,10 @@ vault_settings: &vault_settings_ref
     required: true
     description: Vaul settings
     options:
-      fqdn:
+      ip:
         type: str
         required: true
-        description: FQDN of vault server
+        description: IP of vault server
       port:
         type: str
         default: :8200
@@ -92,18 +92,18 @@ vault_settings: &vault_settings_ref
         type: dict
         description: Vault settings for generating certs
         options:
-          ca_url_path:
+          # root_pki_mount_point:
+          #   type: str
+          #   required: true
+          #   description: Root PKI mount point to reference
+          int_pki_mount_point:
             type: str
             required: true
-            description: Path to root CA cert used for signing certs
+            description: Intermediate PKI mount point to reference
           issue_role:
             type: str
             required: true
             description: Name of role to create the certificate against
-          int_pki_mount_path:
-            type: str
-            required: true
-            description: PKI mount point to reference
 
 vault_general_settings: &vault_general_settings_ref
   vault_general_settings:
@@ -233,7 +233,7 @@ cockroachdb_options: &cockroachdb_options_ref
         [
           *docker_container_options_ref,
           *storage_path_options_ref,
-          *vault_cert_settings_ref,
+          *vault_settings_ref,
         ]
       node_cert_request:
         type: dict

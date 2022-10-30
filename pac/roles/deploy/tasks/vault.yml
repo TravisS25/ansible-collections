@@ -81,10 +81,6 @@
               headers:
                 X-Vault-Token: "{{ vault_token }}"
 
-        - name: fksd;fk;fl
-          debug:
-            msg: "{{ root_mount_api }}"
-
         - name: Enable root pki
           uri:
             <<: *base_vault_uri_settings_ref

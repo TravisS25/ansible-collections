@@ -8,8 +8,8 @@ locals {
     cert_issuer_policy              = "${local.app_name}-cert-issuer"
     pac_pki_role                    = local.app_name
     
-    root_pki_mount_path             = "${local.app_name}/root-pki"
-    int_pki_mount_path              = "${local.app_name}/int-pki"
+    root_pki_mount_point            = "${local.app_name}/root-pki"
+    int_pki_mount_point             = "${local.app_name}/int-pki"
     app_role_mount_path             = "${local.app_name}/approle"
 
     deploy_policy                   = "${local.app_name}-deploy"
@@ -53,6 +53,7 @@ locals {
     redis_hostname              = "redis"
 
     vault_fqdn                  = "${local.vault_hostname}.${local.domain}"
+    cockroachdb_fqdn            = "${local.cockroachdb_hostname}.${local.domain}"
 
     minio_pki_name              = "${local.minio_hostname}-pki"
     cockroachdb_pki_name        = "${local.cockroachdb_hostname}-pki"
@@ -64,8 +65,8 @@ locals {
     server_name                 = "server"
     server_user                 = "user"
 
-    minio_mount_point           = "/mnt/${local.minio_hostname}"
-    storage_mount_point         = "/mnt/storage"
+    minio_mount_path           = "/mnt/${local.minio_hostname}"
+    storage_mount_path         = "/mnt/storage"
 
     alertmanager_config_file    = "/etc/alertmanager/alertmanager.yml"
     prometheus_config_dir       = "/etc/prometheus/"
@@ -78,23 +79,22 @@ locals {
     cockroach_certs_dir         = "${local.home_dir}/.cockroach-certs"
     minio_certs_dir             = "${local.home_dir}/.minio/certs"
 
-    root_pki_ca_url_path        = "/${local.root_pki_mount_path}/cert/ca"
-    root_pki_crl_url_path       = "/${local.root_pki_mount_path}/cert/crl"
+    root_pki_ca_url_path        = "/${local.root_pki_mount_point}/cert/ca"
+    root_pki_crl_url_path       = "/${local.root_pki_mount_point}/cert/crl"
 
     vault_settings              = {
-        fqdn            = local.vault_fqdn
+        // ip  <--  Will be determined at runtime by ansible
         port            = ":8200"
         token           = var.vault_token
         cert_settings   = {
-            ca_url_path         = local.root_pki_ca_url_path
-            issue_role          = local.app_name
-            int_pki_mount_path  = local.int_pki_mount_path 
+            issue_role              = local.app_name 
+            int_pki_mount_point     = local.int_pki_mount_point 
         }
     }
 
     # vault_cert_settings              = {
     #     issue_role          = local.app_name
-    #     int_pki_mount_point = local.int_pki_mount_path
+    #     int_pki_mount_point = local.int_pki_mount_point
     #     ca_url_path         = local.root_pki_ca_url_path
     # }
 
@@ -111,7 +111,7 @@ locals {
         root_var    = {
             hostname            = local.minio_hostname
             action              = "restart"
-            storage_path        = local.minio_mount_point
+            storage_path        = local.minio_mount_path
             protocol            = "https"
             distributed_mode    = {
                 num_of_drives   = local.minio_num_of_drives_per_host
@@ -124,7 +124,7 @@ locals {
         name        = local.node_exporter_hostname
         root_var    = {
             action          = "restart"
-            storage_path    = "${local.storage_mount_point}/${local.node_exporter_hostname}"
+            storage_path    = "${local.storage_mount_path}/${local.node_exporter_hostname}"
         }
     }
 
@@ -132,7 +132,7 @@ locals {
         name        = local.grafana_hostname
         root_var    = {
             action          = "restart"
-            storage_path    = "${local.storage_mount_point}/${local.grafana_hostname}"
+            storage_path    = "${local.storage_mount_path}/${local.grafana_hostname}"
         }
     }
 
@@ -140,7 +140,7 @@ locals {
         name        = local.prometheus_hostname
         root_var    = {
             action          = "restart"
-            storage_path    = "${local.storage_mount_point}/${local.prometheus_hostname}"
+            storage_path    = "${local.storage_mount_path}/${local.prometheus_hostname}"
             config_dir      = local.prometheus_config_dir
         }
     }
@@ -149,12 +149,16 @@ locals {
         name        = local.cockroachdb_hostname
         root_var    = {
             action              = "restart"
-            storage_path        = "${local.storage_mount_point}/${local.cockroachdb_hostname}"
+            storage_path        = "${local.storage_mount_path}/${local.cockroachdb_hostname}"
             cockroach_certs_dir = local.cockroach_certs_dir
             vault               = local.vault_settings
             node_cert_request   = {
                 common_name     = "node"
-                alt_names       = "${local.cockroachdb_hostname}.${local.domain}"
+                alt_names       = local.cockroachdb_fqdn
+            }
+            client_cert_request = {
+                common_name     = local.server_user
+                alt_names       = local.cockroachdb_fqdn
             }
         }
     }
@@ -182,10 +186,10 @@ locals {
             local_keys_file_store   = pathexpand("~/.vault-keys")
             local_tokens_file_store = pathexpand("~/.vault-tokens")
             config_dir              = local.vault_config_dir
-            storage_path            = "${local.storage_mount_point}/${local.vault_hostname}"
+            storage_path            = "${local.storage_mount_path}/${local.vault_hostname}"
             pki_settings            = {
                 root                = {
-                    mount_path      = local.root_pki_mount_path
+                    mount_path      = local.root_pki_mount_point
                     mount_api       = {
                         description             = "Pac root cert engine"
                         config                  = {
@@ -205,10 +209,11 @@ locals {
                         role_name               = "pac"
                         ttl                     = local.root_pki_default_lease_ttl
                         allowed_domains         = [local.domain]
+                        allow_subdomains        = true
                     }
                 }
                 int                 = {
-                    mount_path      = local.int_pki_mount_path
+                    mount_path      = local.int_pki_mount_point
                     mount_api       = {
                         description             = "Pac intermediate cert engine"
                         config                  = {
@@ -224,8 +229,8 @@ locals {
                         common_name             = local.domain
                     }
                     url_api         = {
-                        issuing_certificates    = ["http://${local.vault_fqdn}/v1/${local.int_pki_mount_path}/ca"]
-                        crl_distribution_points = ["http://${local.vault_fqdn}/v1/${local.int_pki_mount_path}/crl"]
+                        issuing_certificates    = ["http://${local.vault_fqdn}/v1/${local.int_pki_mount_point}/ca"]
+                        crl_distribution_points = ["http://${local.vault_fqdn}/v1/${local.int_pki_mount_point}/crl"]
                     }
                     role_api        = {
                         role_name               = "pac"
@@ -257,7 +262,7 @@ locals {
                                 capabilities = ["create", "read", "update", "patch", "delete", "list"]
                             }
 
-                            path "${local.app_name}/${local.root_pki_mount_path}/*" {
+                            path "${local.app_name}/${local.root_pki_mount_point}/*" {
                                 capabilities = ["read"]
                             }
                         EOT
@@ -265,7 +270,7 @@ locals {
                     # {
                     #     name      = local.cert_issuer_policy
                     #     policy    = <<-EOT
-                    #         path "${local.int_pki_mount_path}/issue/${local.pac_pki_role}/*" {
+                    #         path "${local.int_pki_mount_point}/issue/${local.pac_pki_role}/*" {
                     #             capabilities = ["create"]
                     #         }
                     #     EOT
@@ -310,7 +315,7 @@ locals {
             #     {
             #         name      = local.cert_issuer_policy
             #         policy    = <<-EOT
-            #             path "${local.int_pki_mount_path}/issue/${local.pac_pki_role}/*" {
+            #             path "${local.int_pki_mount_point}/issue/${local.pac_pki_role}/*" {
             #                 capabilities = ["create"]
             #             }
             #         EOT

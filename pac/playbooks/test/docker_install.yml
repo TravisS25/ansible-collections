@@ -21,9 +21,10 @@
             tasks_from: vault
           vars:
             root_var:
+              token: hvs.agQJ5a4Lyp1ZUKs3yeE13mSu
               host: http://localhost:8200
-              keys_file: /home/travis/docker-testing/vault/vault-keys
-              tokens_file: /home/travis/docker-testing/vault/vault-tokens
+              local_keys_file_store: /home/travis/docker-testing/vault/vault-keys
+              local_tokens_file_store: /home/travis/docker-testing/vault/vault-tokens
               config_dir: /home/user/vault/config
               storage_path: /home/user/vault/data
               pki_settings:
@@ -33,6 +34,7 @@
                     description: Pac root cert engine
                     config:
                       default_lease_ttl: 87600h
+                      max_lease_ttl: 87600h
                       force_no_cache: true
                   cert_api:
                     common_name: pickacontractor.com
@@ -52,6 +54,7 @@
                     description: Pac intermediate cert engine
                     config:
                       default_lease_ttl: 43800h
+                      max_lease_ttl: 43800h
                       force_no_cache: true
                   cert_api:
                     common_name: pickacontractor.com

@@ -1,7 +1,6 @@
 ---
 - name: Set terraform facts
   set_fact:
-    #updated_droplets: []
     pac_tf_backend_config: {}
     pac_tf_root_path: ""
     pac_tf_current_state_file: ""
@@ -12,38 +11,6 @@
     pac_tf_state_file: "{{ lookup('env', 'PAC_TF_STATE_FILE') }}"
     pac_tf_workspace_dir: "{{ lookup('env', 'PAC_TF_WORKSPACE_DIR') }}"
     pac_tf_plan_file: "/tmp/pac_terraform.tfplan"
-    # network_config_file: /tmp/pac_terraform_network_config
-    # user_data_file: /tmp/pac_terraform_user_data
-    # vendor_data_file: /tmp/pac_terraform_vendor_data
-    # ssh_file_path: "{{ lookup('env', 'SSH_FILE_PATH') }}"
-
-# - name: Convert droplets for terraform
-#   loop: "{{ local_vars.droplets }}"
-#   vars:
-#     tmpl_vars:
-#       droplet: "{{ item }}"
-#       ssh_file_content: "{{ lookup('file', ssh_file_path) }}"
-#       network_config_file: "{{ network_config_file + '_' + item.hostname + '.yml' }}"
-#       user_data_file: "{{ user_data_file + '_' + item.hostname + '.yml' }}"
-#       vendor_data_file: "{{ vendor_data_file + '_' + item.hostname + '.yml' }}"
-#   set_fact:
-#     updated_droplets: "{{ updated_droplets + [lookup('template', 'convert_droplet.j2', template_vars=tmpl_vars) | from_yaml] }}"
-
-# - name: Write temp files for user data
-#   loop: "{{ updated_droplets }}"
-#   template:
-#     src: user_data.j2
-#     dest: "{{ item.cloud_init.user_data_file }}"
-#   vars:
-#     yaml_content: "{{ item.cloud_init.user_data }}"
-
-# - name: Write temp files for network config
-#   loop: "{{ updated_droplets }}"
-#   template:
-#     src: yaml.j2
-#     dest: "{{ item.cloud_init.network_config_file }}"
-#   vars:
-#     yaml_content: "{{ item.cloud_init.network_config }}"
 
 - name: Local workspace block
   when: pac_tf_workspace == 'local'

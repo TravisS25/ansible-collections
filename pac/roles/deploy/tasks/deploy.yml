@@ -30,10 +30,9 @@
     deploy_tag_dict: "{{ deploy_tag_dict }}"
     tag: "{{ item }}"
     deploy_settings: "{{ deploy_settings }}"
-
-- name: Create inventory template file
-  when: prod and not preflight
-  template:
-    src: inventory.j2
-    dest: "{{ role_path }}../../inventory/pac.ini"
-    mode: 0700
+# - name: Create inventory template file
+#   when: prod and not preflight
+#   template:
+#     src: inventory.j2
+#     dest: "{{ role_path }}../../inventory/pac.ini"
+#     mode: 0700

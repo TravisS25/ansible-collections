@@ -12,11 +12,18 @@
 
 - when: tag == 'cockroachdb'
   block:
-    - name: Update cert requests
+    - name: Update cockroachdb deploy vars
       vars:
-        node_cert_request: "{{ deploy_vars['node_cert_request'] | combine({'ip_sans': droplet.ip}) }}"
-        client_cert_request: "{{ deploy_vars['client_cert_request'] | combine({'ip_sans': droplet.ip}) }}"
+        updates:
+          node_cert_request: "{{ deploy_vars['node_cert_request'] | combine({'ip_sans': droplet.ip, 'common_name': 'node'}) }}"
+          client_cert_request: "{{ deploy_vars['client_cert_request'] | combine({'ip_sans': droplet.ip, 'common_name': 'node'}) }}"
+          vault: "{{ deploy_vars['vault'] | combine({'ip': deploy_tag_dict['vault'][0]}) }}"
       set_fact:
-        deploy_vars: "{{ deploy_vars | combine({'node_cert_request': node_cert_request, 'client_cert_request': client_cert_request}, recursive=true) }}"
+        deploy_vars: "{{ deploy_vars | combine(updates, recursive=true) }}"
 
-    - name:
+    - name: Deploy cockroachdb
+      import_role:
+        name: traviss25.pac.deploy
+        tasks_from: cockroachdb
+      vars:
+        root_var: "{{ deploy_vars }}"
