@@ -47,7 +47,6 @@
   register: certs_dir_result
 
 - when: certs_dir_result.matched == 0
-  delegate_to: "{{ root_var.vault.ip }}"
   block:
     - name: Set cockroach deploy facts
       set_fact:
@@ -58,32 +57,120 @@
           headers:
             X-Vault-Token: "{{ root_var.vault.token }}"
 
-    - name: Get CA public cert
-      uri:
-        <<: *base_vault_uri_settings_ref
-        url: "{{ base_url }}{{ root_var.vault.cert_settings.int_pki_mount_point }}/cert/ca"
-      register: ca_cert_res
-
     - name: Generate node cert/key
       uri:
         <<: *base_vault_uri_settings_ref
         url: "{{ base_url }}{{ root_var.vault.int_pki_mount_point }}/issue/{{ root_var.vault.issue_role }}"
         body: "{{ root_var.node_cert_request }}"
-      register: node_cert_res
+      register: cockroachdb_node_cert_res
 
     - name: Generate user cert/key
       uri:
         <<: *base_vault_uri_settings_ref
         url: "{{ base_url }}{{ root_var.vault.int_pki_mount_point }}/issue/{{ root_var.vault.issue_role }}"
         body: "{{ root_var.client_cert_request }}"
-      register: user_cert_res
+      register: cockroachdb_client_cert_res
 
-    - name: Write
-
-    - name: Copy client cert to temp file
+    - name: Write CA cert to cockroachdb directory
       copy:
-        content: "{{ client_cert_res }}"
-        dest: "{{ tmp_client_cert_file }}"
+        dest: "{{ root_var.cockroach_certs_dir }}/ca.crt"
+        content: "{{ cockroachdb_node_cert_res['data']['issuing_ca'] }}"
+
+    - name: Write node cert to cockroachdb directory
+      copy:
+        dest: "{{ root_var.cockroach_certs_dir }}/node.crt"
+        content: "{{ cockroachdb_node_cert_res['data']['certificate'] }}"
+
+    - name: Write node key to cockroachdb directory
+      copy:
+        dest: "{{ root_var.cockroach_certs_dir }}/node.key"
+        content: "{{ cockroachdb_node_cert_res['data']['private_key'] }}"
+
+    - name: Write client cert to cockroachdb directory
+      copy:
+        dest: "{{ root_var.cockroach_certs_dir }}/client.{{ root_var.client_cert_request.common_name }}.crt"
+        content: "{{ cockroachdb_client_cert_res['data']['certificate'] }}"
+
+    - name: Write client key to cockroachdb directory
+      copy:
+        dest: "{{ root_var.cockroach_certs_dir }}/client.{{ root_var.client_cert_request.common_name }}.key"
+        content: "{{ cockroachdb_client_cert_res['data']['private_key'] }}"
+
+    # - when: root_var.ip == root_var.vault.ip
+    #   block:
+    #     - name: Import cockroachdb gen cert task
+    #       import_tasks: cockroachdb_gen_cert.yml
+    #       vars:
+    #         base_url: "{{ base_url }}"
+    #         root_var: "{{ root_var }}"
+
+    #     - name: Import cockroachdb cert dir task
+    #       import_tasks: cockroachdb_cert_dir.yml
+    #       vars:
+    #         ca_cert: "{{ hostvars[root_var.ip]['cockroachdb_node_cert_res']['data']['issuing_ca'] }}"
+    #         node_cert: "{{ hostvars[root_var.ip]['cockroachdb_node_cert_res']['data']['certificate'] }}"
+    #         node_key: "{{ hostvars[root_var.ip]['cockroachdb_node_cert_res']['data']['private_key'] }}"
+    #         client_cert: "{{ hostvars[root_var.ip]['cockroachdb_client_cert_res']['data']['certificate'] }}"
+    #         client_key: "{{ hostvars[root_var.ip]['cockroachdb_client_cert_res']['data']['private_key'] }}"
+    #         cockroach_certs_dir: "{{ root_var.cockroach_certs_dir }}"
+    #         client_user: "{{ root_var.client_cert_request.common_name }}"
+
+    # - when: root_var.vault.ip != root_var.ip
+    #   delegate_to: "{{ root_var.vault.ip }}"
+    #   block:
+    #     - name: Import cockroachdb cert task
+    #       import_tasks: cockroachdb_gen_cert.yml
+    #       vars:
+    #         base_url: "{{ base_url }}"
+    #         root_var: "{{ root_var }}"
+
+    #     - name: Write node cert content to temp file
+    #       copy:
+    #         content: "{{ hostvars[root_var.vault.ip]['cockroachdb_node_cert_res'] }}"
+    #         dest: "{{ hostvars[root_var.ip]['tmp_node_cert_file'] }}"
+
+    #     - name: Write client cert content to temp file
+    #       copy:
+    #         content: "{{ hostvars[root_var.vault.ip]['cockroachdb_client_cert_res'] }}"
+    #         dest: "{{ hostvars[root_var.ip]['tmp_client_cert_file'] }}"
+
+    #     - name: Fetch node cert content from remote server
+    #       fetch:
+    #         src: "{{ hostvars[root_var.ip]['tmp_node_cert_file'] }}"
+    #         dest: "{{ hostvars[root_var.ip]['tmp_node_cert_file'] }}"
+
+    #     - name: Fetch client cert content from remote server
+    #       fetch:
+    #         src: "{{ hostvars[root_var.ip]['tmp_client_cert_file'] }}"
+    #         dest: "{{ hostvars[root_var.ip]['tmp_client_cert_file'] }}"
+
+    #     - name: Remove node cert content from remote server
+    #       file:
+    #         state: absent
+    #         path: "{{ hostvars[root_var.ip]['tmp_node_cert_file'] }}"
+
+    #     - name: Remove client cert content from remote server
+    #       file:
+    #         state: absent
+    #         path: "{{ hostvars[root_var.ip]['tmp_client_cert_file'] }}"
+
+    # - when: root_var.vault.ip != root_var.ip
+    #   block:
+    #     - name: Grab cert content from files
+    #       set_fact:
+    #         node_cert_content: "{{ lookup('file', tmp_node_cert_file) | from_json }}"
+    #         client_cert_content: "{{ lookup('file', tmp_client_cert_file) | from_json }}"
+
+    #     - name: Import cockroachdb cert dir task
+    #       import_tasks: cockroachdb_cert_dir.yml
+    #       vars:
+    #         ca_cert: "{{ hostvars[root_var.ip]['node_cert_content']['data']['issuing_ca'] }}"
+    #         node_cert: "{{ hostvars[root_var.ip]['node_cert_content']['data']['certificate'] }}"
+    #         node_key: "{{ hostvars[root_var.ip]['node_cert_content']['data']['private_key'] }}"
+    #         client_cert: "{{ hostvars[root_var.ip]['cockroachdb_client_cert_res']['data']['certificate'] }}"
+    #         client_key: "{{ hostvars[root_var.ip]['cockroachdb_client_cert_res']['data']['private_key'] }}"
+    #         cockroach_certs_dir: "{{ root_var.cockroach_certs_dir }}"
+    #         client_user: "{{ root_var.client_cert_request.common_name }}"
 
 - name: Import cockroachdb docker task
   import_role:

@@ -164,7 +164,7 @@
 
         - name: Import vault settings
           import_role:
-            name: traviss25.pac.util
+            name: traviss25.pac.deploy
             tasks_from: vault_util
           vars:
             policy_settings: "{{ root_var.policy_settings }}"
@@ -209,7 +209,7 @@
     - name: Import vault settings
       when: hostvars['localhost']['was_vault_initialized']
       import_role:
-        name: traviss25.pac.util
+        name: traviss25.pac.deploy
         tasks_from: vault_util
       vars:
         policy_settings: "{{ root_var.policy_settings }}"

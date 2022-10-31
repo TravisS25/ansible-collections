@@ -27,12 +27,6 @@ docker_container_options: &docker_container_options_ref
       - stop
       - restart
 
-ip_options: &ip_options_ref
-  ip:
-    type: str
-    required: true
-    description: IP address of machine
-
 pki_options: &pki_options_ref
   role_name:
     type: str
@@ -92,10 +86,6 @@ vault_settings: &vault_settings_ref
         type: dict
         description: Vault settings for generating certs
         options:
-          # root_pki_mount_point:
-          #   type: str
-          #   required: true
-          #   description: Root PKI mount point to reference
           int_pki_mount_point:
             type: str
             required: true
@@ -105,41 +95,7 @@ vault_settings: &vault_settings_ref
             required: true
             description: Name of role to create the certificate against
 
-vault_general_settings: &vault_general_settings_ref
-  vault_general_settings:
-    type: dict
-    required: true
-    description: Vault general settings
-    options:
-      fqdn:
-        type: str
-        required: true
-        description: FQDN of vault server
-      port:
-        type: str
-        default: :8200
-        description: Port vault server is listening on
-      token:
-        type: str
-        required: true
-        description: Vault token to perform actions against vault
-
-vault_cert_settings: &vault_cert_settings_ref
-  vault_cert_settings:
-    type: dict
-    required: true
-    description: Vault cert settings
-    options:
-      issue_role:
-        type: str
-        required: true
-        description: Name of role to create the certificate against
-      int_pki_mount_point:
-        type: str
-        description: PKI mount point to reference
-      ca_url_path:
-        type: str
-        description: Path to root CA cert used for signing certs
+# -------------------------------------------------------------------------
 
 vault_options: &vault_options_ref
   root_var:
@@ -204,8 +160,6 @@ vault_options: &vault_options_ref
             description: |
               List of policies to create/update
               Naming of fields should correspond with api
-
-# -------------------------------------------------------------------------
 
 alertmanager_options: &alertmanager_options_ref
   root_var:
