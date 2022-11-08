@@ -1,4 +1,11 @@
 ---
+http_options: &http_options_ref
+  valid_status_codes:
+    type: list
+    elements: int
+    required: true
+    description: List of status codes that is considered success from vault
+
 storage_path_options: &storage_path_options_ref
   storage_path:
     type: str
@@ -108,6 +115,7 @@ vault_options: &vault_options_ref
           *docker_container_options_ref,
           *config_dir_options_ref,
           *storage_path_options_ref,
+          *http_options_ref
         ]
       pki_settings:
         type: dict
@@ -175,7 +183,7 @@ coredns_options: &coredns_options_ref
     required: true
     description: Generic vars for coredns
     options:
-      <<: [*docker_container_options_ref, *config_file_options_ref]
+      <<: [*config_file_options_ref]
 
 cockroachdb_options: &cockroachdb_options_ref
   root_var:
@@ -188,7 +196,12 @@ cockroachdb_options: &cockroachdb_options_ref
           *docker_container_options_ref,
           *storage_path_options_ref,
           *vault_settings_ref,
+          *http_options_ref,
         ]
+      advertise_port:
+        type: str
+        default: :26257
+        description: Port cockroachdb server advertises for other ports
       node_cert_request:
         type: dict
         required: true
@@ -283,7 +296,7 @@ deploy_options: &deploy_options_ref
     type: dict
     required: true
     description: Variety of droplet settings
-  deploy_settings:
+  deploy_var_settings:
     type: dict
     required: true
     description: Variety of deploy settings for droplet

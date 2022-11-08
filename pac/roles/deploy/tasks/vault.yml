@@ -7,9 +7,6 @@
     vault_token: "{{ root_var.token | default(omit) }}"
     action: "{{ root_var.action | default(vault_defaults.action) }}"
     tmp_tokens_file: /tmp/tokens
-    valid_status_codes:
-      - 200
-      - 204
     vault_params: &vault_params_ref
       name: vault
       image: vault:1.11.4
@@ -77,7 +74,7 @@
             base_vault_uri_settings: &base_vault_uri_settings_ref
               method: post
               body_format: json
-              status_code: "{{ valid_status_codes }}"
+              status_code: "{{ root_var.valid_status_codes }}"
               headers:
                 X-Vault-Token: "{{ vault_token }}"
 
@@ -116,11 +113,11 @@
             <<: *base_vault_uri_settings_ref
             url: "{{ base_url }}/{{ root_var.pki_settings.int.mount_path }}/intermediate/generate/internal"
             body: "{{ root_var.pki_settings.int.cert_api }}"
-          register: intermediate_csr_res
+          register: int_csr_res
 
         - name: Update int sign cert api
           set_fact:
-            int_sign_cert_api: "{{ root_var.pki_settings.int.sign_cert_api | combine({'csr': intermediate_csr_res.json['data']['csr']}) }}"
+            int_sign_cert_api: "{{ root_var.pki_settings.int.sign_cert_api | combine({'csr': int_csr_res.json['data']['csr']}) }}"
 
         - name: Sign CSR
           uri:
@@ -170,7 +167,7 @@
             policy_settings: "{{ root_var.policy_settings }}"
             token_settings: "{{ root_var.token_settings }}"
             vault_token: "{{ vault_token }}"
-            valid_status_codes: "{{ valid_status_codes }}"
+            valid_status_codes: "{{ root_var.valid_status_codes }}"
             base_url: "{{ base_url }}"
 
         - name: Create tokens
@@ -215,5 +212,5 @@
         policy_settings: "{{ root_var.policy_settings }}"
         token_settings: "{{ root_var.token_settings }}"
         vault_token: "{{ vault_token }}"
-        valid_status_codes: "{{ valid_status_codes }}"
+        valid_status_codes: "{{ root_var.valid_status_codes }}"
         base_url: "{{ base_url }}"

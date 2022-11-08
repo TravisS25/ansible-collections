@@ -136,7 +136,6 @@ locals {
         cockroach_certs_dir     = local.cockroach_certs_dir
         vault                   = local.vault_settings
         node_cert_request       = {
-            common_name     = "node"
             alt_names       = local.cockroachdb_fqdn
         }
         client_cert_request     = {

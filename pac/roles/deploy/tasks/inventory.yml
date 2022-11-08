@@ -1,0 +1,9 @@
+---
+- name: Create inventory from template file
+  template:
+    src: inventory.j2
+    dest: "{{ role_path }}../../inventory/pac.ini"
+    mode: 0700
+  vars:
+    ip_list: "{{ ip_list }}"
+    deploy_tag_dict: "{{ deploy_tag_dict }}"

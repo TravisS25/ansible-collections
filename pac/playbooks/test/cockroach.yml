@@ -4,10 +4,10 @@
 
   tasks:
     - delegate_to: 192.168.4.2
-      become: true
       remote_user: user
       block:
         - name: Install docker
+          become: true
           import_role:
             name: traviss25.util.docker
             tasks_from: install
@@ -21,7 +21,10 @@
             tasks_from: vault
           vars:
             root_var:
-              token: hvs.agQJ5a4Lyp1ZUKs3yeE13mSu
+              valid_status_codes:
+                - 200
+                - 204
+              #token: hvs.agQJ5a4Lyp1ZUKs3yeE13mSu
               local_keys_file_store: /home/travis/docker-testing/vault/vault-keys
               local_tokens_file_store: /home/travis/docker-testing/vault/vault-tokens
               config_dir: /home/user/vault/config
@@ -39,13 +42,14 @@
                     common_name: pickacontractor.com
                   url_api:
                     issuing_certificates:
-                      - http://vault.pickacontractor.com/v1/pac/root-pki/ca
+                      - http://vault.pickacontractor.com/v1/pac/root-pki/cert/ca
                     crl_distribution_points:
-                      - http://vault.pickacontractor.com/v1/pac/root-pki/crl
+                      - http://vault.pickacontractor.com/v1/pac/root-pki/cert/crl
                   role_api:
                     role_name: pac
                     ttl: 87600h
                     allow_subdomains: true
+                    allow_any_name: true
                     allowed_domains:
                       - pickacontractor.com
                 int:
@@ -62,13 +66,14 @@
                     common_name: pickacontractor.com
                   url_api:
                     issuing_certificates:
-                      - http://vault.pickacontractor.com/v1/pac/int-pki/ca
+                      - http://vault.pickacontractor.com/v1/pac/int-pki/cert/ca
                     crl_distribution_points:
-                      - http://vault.pickacontractor.com/v1/pac/int-pki/crl
+                      - http://vault.pickacontractor.com/v1/pac/int-pki/cert/crl
                   role_api:
                     role_name: pac
                     ttl: 43800h
                     allow_subdomains: true
+                    allow_any_name: true
                     allowed_domains:
                       - pickacontractor.com
               token_settings:
@@ -93,23 +98,31 @@
                         capabilities = ["create", "read", "update", "patch", "delete", "list"]
                       }
 
-        # - name: Run cockroach deploy
-        #   import_role:
-        #     name: traviss25.pac.deploy
-        #     tasks_from: cockroachdb
-        #   vars:
-        #     root_var:
-        #       vault:
-        #         ip: 192.168.4.2
-        #         port: :8200
-        #         issue_role: pac
-        #         token: "{{ hostvars['localhost']['vault_token'] }}"
-        #         cert_settings:
-        #           int_pki_mount_point: pac/root-pki
-        #           issue_role: pac
-        #       node_cert_request:
-        #         alt_names: cockroachdb.pickacontractor.com
-        #         ip_sans: 192.168.4.2
-        #       storage_path: /home/user/cockroachdb/
-        #       cluster_join: "192.168.4.2:26257"
-        #       cockroach_certs_dir: /home/user/.cockroach-certs/
+        - name: Run cockroach deploy
+          import_role:
+            name: traviss25.pac.deploy
+            tasks_from: cockroachdb
+          vars:
+            root_var:
+              insecure: false
+              valid_status_codes:
+                - 200
+                - 204
+              vault:
+                ip: 192.168.4.2
+                port: :8200
+                token: "{{ hostvars['localhost']['vault_token'] }}"
+                cert_settings:
+                  int_pki_mount_point: /pac/int-pki
+                  issue_role: pac
+              node_cert_request:
+                alt_names: cockroachdb1.pickacontractor.com
+                common_name: node
+                ip_sans: 192.168.4.2
+              client_cert_request:
+                alt_names: cockroachdb1.pickacontractor.com
+                common_name: user
+                ip_sans: 192.168.4.2
+              storage_path: /home/user/cockroachdb
+              cluster_join: "192.168.4.2:26257,192.168.4.3:26257,192.168.4.4:26257"
+              cockroach_certs_dir: /home/user/.cockroach-certs

@@ -2,13 +2,13 @@
 - name: Assert tag is in deploy settings
   when: preflight
   assert:
-    that: tag in deploy_settings
+    that: tag in deploy_var_settings
   fail_msg: "Tag {{ tag }} not in deploy settings"
 
-- name: Set deploy vars
-  when: tag in deploy_settings and not preflight
+- name: Set deploy tag facts
+  when: tag in deploy_var_settings and not preflight
   set_fact:
-    deploy_vars: "{{ deploy_settings[tag] | combine({'ip': droplet.ip}) }}"
+    deploy_vars: "{{ deploy_var_settings[tag] | combine({'ip': droplet.ip, 'valid_status_codes': [200, 204]}) }}"
 
 - when: tag == 'cockroachdb'
   block:
@@ -16,10 +16,20 @@
       vars:
         updates:
           node_cert_request: "{{ deploy_vars['node_cert_request'] | combine({'ip_sans': droplet.ip, 'common_name': 'node'}) }}"
-          client_cert_request: "{{ deploy_vars['client_cert_request'] | combine({'ip_sans': droplet.ip, 'common_name': 'node'}) }}"
+          client_cert_request: "{{ deploy_vars['client_cert_request'] | combine({'ip_sans': droplet.ip}) }}"
           vault: "{{ deploy_vars['vault'] | combine({'ip': deploy_tag_dict['vault'][0]}) }}"
       set_fact:
         deploy_vars: "{{ deploy_vars | combine(updates, recursive=true) }}"
+        cockroachdb_cluster_join: ''
+
+    - name: Loop ips and create cluster join
+      loop: "{{ deploy_tag_dict[tag] }}"
+      vars:
+        host: "{{ item }}{{ deploy_vars['advertise_port'] }},"
+      set_fact:
+        cockroachdb_cluster_join: "{{ cockroachdb_cluster_join + host }}"
+
+    - name: 
 
     - name: Deploy cockroachdb
       import_role:

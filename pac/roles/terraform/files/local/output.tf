@@ -2,7 +2,7 @@
 output "local_config" {
     value   = {
         droplets            = local.droplets
-        deploy_settings     = {
+        deploy_var_settings     = {
             minio           = local.minio_deploy
             node_exporter   = local.node_exporter_deploy
             grafana         = local.grafana_deploy

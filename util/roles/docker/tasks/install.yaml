@@ -46,22 +46,19 @@
     # Docker version: 5:20.10.17~3-0~ubuntu-focal
 
     - name: Install docker packages
+      ignore_errors: true
       apt:
         pkg:
           - "docker-ce={{ docker_version | default(run_defaults.docker_version) }}"
           - "docker-ce-cli={{ docker_version | default(run_defaults.docker_version) }}"
-
-    # - name: Create docker group
-    #   shell:
-    #     cmd: groupadd docker
 
     - name: Add user(s) to docker group
       loop: "{{ users | default([]) }}"
       user:
         name: "{{ item }}"
         groups: docker
+        append: yes
 
-- name: Docker already installed
-  when: "'docker-ce' in ansible_facts.packages"
-  debug:
-    msg: Docker already installed
+- name: Reset ssh connection
+  meta:
+    reset_connection

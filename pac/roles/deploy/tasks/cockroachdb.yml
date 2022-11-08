@@ -1,14 +1,16 @@
 ---
-- name: Set fact for cockroachdb deploy
+- name: Set base facts for cockroachdb deploy
   set_fact:
     vault_port: "{{ root_var.vault.port | default(all_defaults.vault_port) }}"
     cockroachdb_docker_certs_dir: /cockroach/certs
     cockroachdb_container_name: cockroachdb
     tmp_node_cert_file: /tmp/node-cert.json
     tmp_client_cert_file: /tmp/client-cert.json
-    # valid_status_codes:
-    #   - 200
-    #   - 204
+    insecure: "{{ root_var.insecure | default(cockroachdb_defaults.insecure) }}"
+    action: "{{ root_var.action | default(all_defaults.action) }}"
+    
+- name: Set command facts for cockroachdb
+  set_fact:
     insecure_start_command:
       - start
       - --insecure
@@ -50,6 +52,8 @@
   block:
     - name: Set cockroach deploy facts
       set_fact:
+        # Going to change this in the future to use FQDN but have
+        # to determine how to set up DNS for that, using ip for now
         base_url: "http://{{ root_var.vault.ip }}{{ vault_port }}/v1"
         cockroach_vault_uri_settings: &base_vault_uri_settings_ref
           method: post
@@ -60,117 +64,46 @@
     - name: Generate node cert/key
       uri:
         <<: *base_vault_uri_settings_ref
-        url: "{{ base_url }}{{ root_var.vault.int_pki_mount_point }}/issue/{{ root_var.vault.issue_role }}"
+        url: "{{ base_url }}{{ root_var.vault.cert_settings.int_pki_mount_point }}/issue/{{ root_var.vault.cert_settings.issue_role }}"
         body: "{{ root_var.node_cert_request }}"
       register: cockroachdb_node_cert_res
 
     - name: Generate user cert/key
       uri:
         <<: *base_vault_uri_settings_ref
-        url: "{{ base_url }}{{ root_var.vault.int_pki_mount_point }}/issue/{{ root_var.vault.issue_role }}"
+        url: "{{ base_url }}{{ root_var.vault.cert_settings.int_pki_mount_point }}/issue/{{ root_var.vault.cert_settings.issue_role }}"
         body: "{{ root_var.client_cert_request }}"
       register: cockroachdb_client_cert_res
 
     - name: Write CA cert to cockroachdb directory
       copy:
         dest: "{{ root_var.cockroach_certs_dir }}/ca.crt"
-        content: "{{ cockroachdb_node_cert_res['data']['issuing_ca'] }}"
+        content: "{{ cockroachdb_node_cert_res['json']['data']['issuing_ca'] }}"
+        mode: 0700
 
     - name: Write node cert to cockroachdb directory
       copy:
         dest: "{{ root_var.cockroach_certs_dir }}/node.crt"
-        content: "{{ cockroachdb_node_cert_res['data']['certificate'] }}"
+        content: "{{ cockroachdb_node_cert_res['json']['data']['certificate'] }}"
+        mode: 0700
 
     - name: Write node key to cockroachdb directory
       copy:
         dest: "{{ root_var.cockroach_certs_dir }}/node.key"
-        content: "{{ cockroachdb_node_cert_res['data']['private_key'] }}"
+        content: "{{ cockroachdb_node_cert_res['json']['data']['private_key'] }}"
+        mode: 0700
 
     - name: Write client cert to cockroachdb directory
       copy:
         dest: "{{ root_var.cockroach_certs_dir }}/client.{{ root_var.client_cert_request.common_name }}.crt"
-        content: "{{ cockroachdb_client_cert_res['data']['certificate'] }}"
+        content: "{{ cockroachdb_client_cert_res['json']['data']['certificate'] }}"
+        mode: 0700
 
     - name: Write client key to cockroachdb directory
       copy:
         dest: "{{ root_var.cockroach_certs_dir }}/client.{{ root_var.client_cert_request.common_name }}.key"
-        content: "{{ cockroachdb_client_cert_res['data']['private_key'] }}"
-
-    # - when: root_var.ip == root_var.vault.ip
-    #   block:
-    #     - name: Import cockroachdb gen cert task
-    #       import_tasks: cockroachdb_gen_cert.yml
-    #       vars:
-    #         base_url: "{{ base_url }}"
-    #         root_var: "{{ root_var }}"
-
-    #     - name: Import cockroachdb cert dir task
-    #       import_tasks: cockroachdb_cert_dir.yml
-    #       vars:
-    #         ca_cert: "{{ hostvars[root_var.ip]['cockroachdb_node_cert_res']['data']['issuing_ca'] }}"
-    #         node_cert: "{{ hostvars[root_var.ip]['cockroachdb_node_cert_res']['data']['certificate'] }}"
-    #         node_key: "{{ hostvars[root_var.ip]['cockroachdb_node_cert_res']['data']['private_key'] }}"
-    #         client_cert: "{{ hostvars[root_var.ip]['cockroachdb_client_cert_res']['data']['certificate'] }}"
-    #         client_key: "{{ hostvars[root_var.ip]['cockroachdb_client_cert_res']['data']['private_key'] }}"
-    #         cockroach_certs_dir: "{{ root_var.cockroach_certs_dir }}"
-    #         client_user: "{{ root_var.client_cert_request.common_name }}"
-
-    # - when: root_var.vault.ip != root_var.ip
-    #   delegate_to: "{{ root_var.vault.ip }}"
-    #   block:
-    #     - name: Import cockroachdb cert task
-    #       import_tasks: cockroachdb_gen_cert.yml
-    #       vars:
-    #         base_url: "{{ base_url }}"
-    #         root_var: "{{ root_var }}"
-
-    #     - name: Write node cert content to temp file
-    #       copy:
-    #         content: "{{ hostvars[root_var.vault.ip]['cockroachdb_node_cert_res'] }}"
-    #         dest: "{{ hostvars[root_var.ip]['tmp_node_cert_file'] }}"
-
-    #     - name: Write client cert content to temp file
-    #       copy:
-    #         content: "{{ hostvars[root_var.vault.ip]['cockroachdb_client_cert_res'] }}"
-    #         dest: "{{ hostvars[root_var.ip]['tmp_client_cert_file'] }}"
-
-    #     - name: Fetch node cert content from remote server
-    #       fetch:
-    #         src: "{{ hostvars[root_var.ip]['tmp_node_cert_file'] }}"
-    #         dest: "{{ hostvars[root_var.ip]['tmp_node_cert_file'] }}"
-
-    #     - name: Fetch client cert content from remote server
-    #       fetch:
-    #         src: "{{ hostvars[root_var.ip]['tmp_client_cert_file'] }}"
-    #         dest: "{{ hostvars[root_var.ip]['tmp_client_cert_file'] }}"
-
-    #     - name: Remove node cert content from remote server
-    #       file:
-    #         state: absent
-    #         path: "{{ hostvars[root_var.ip]['tmp_node_cert_file'] }}"
-
-    #     - name: Remove client cert content from remote server
-    #       file:
-    #         state: absent
-    #         path: "{{ hostvars[root_var.ip]['tmp_client_cert_file'] }}"
-
-    # - when: root_var.vault.ip != root_var.ip
-    #   block:
-    #     - name: Grab cert content from files
-    #       set_fact:
-    #         node_cert_content: "{{ lookup('file', tmp_node_cert_file) | from_json }}"
-    #         client_cert_content: "{{ lookup('file', tmp_client_cert_file) | from_json }}"
-
-    #     - name: Import cockroachdb cert dir task
-    #       import_tasks: cockroachdb_cert_dir.yml
-    #       vars:
-    #         ca_cert: "{{ hostvars[root_var.ip]['node_cert_content']['data']['issuing_ca'] }}"
-    #         node_cert: "{{ hostvars[root_var.ip]['node_cert_content']['data']['certificate'] }}"
-    #         node_key: "{{ hostvars[root_var.ip]['node_cert_content']['data']['private_key'] }}"
-    #         client_cert: "{{ hostvars[root_var.ip]['cockroachdb_client_cert_res']['data']['certificate'] }}"
-    #         client_key: "{{ hostvars[root_var.ip]['cockroachdb_client_cert_res']['data']['private_key'] }}"
-    #         cockroach_certs_dir: "{{ root_var.cockroach_certs_dir }}"
-    #         client_user: "{{ root_var.client_cert_request.common_name }}"
+        content: "{{ cockroachdb_client_cert_res['json']['data']['private_key'] }}"
+        mode: 0700
 
 - name: Import cockroachdb docker task
   import_role:
@@ -185,8 +118,21 @@
     certs_dir: "{{ root_var.cockroach_certs_dir }}"
     docker_certs_dir: "{{ cockroachdb_docker_certs_dir }}"
 
+- name: Check cluster health
+  
+
 - name: Init cluster
-  when: root_var.action != 'stop'
+  when: certs_dir_result.matched == 0
+  async: 30
   community.docker.docker_container_exec:
     container: "{{ cockroachdb_container_name }}"
-    argv: "{% if root_var.insecure %}{{ insecure_init_command }}{% else %}{{ init_command }}{% endif %}"
+    argv: "{% if insecure %}{{ insecure_init_command }}{% else %}{{ init_command }}{% endif %}"
+  # ignore_errors: yes
+  # register: init_cluster
+  # until: not init_cluster.failed
+  # retries: 5
+  # delay: 5
+
+# - name: Debug heeeeeeere
+#   debug:
+#     msg: "{{ init_cluster }}"

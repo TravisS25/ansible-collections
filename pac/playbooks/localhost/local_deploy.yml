@@ -5,15 +5,13 @@
   tasks:
     - name: Set playbook facts
       set_fact:
-        deploy_droplets: []
+        deploy_tag_dict: {}
+        ip_list: []
         config:
-          {
-            terraform:
-              {
-                output_config_file: /tmp/pac_terraform_config.json,
-                local_vars: { root_var: {} },
-              },
-          }
+          terraform:
+            output_config_file: /tmp/pac_terraform_config.json
+            local_vars: 
+              root_var: {}
 
     - name: Set config file
       when: config_file is defined
@@ -37,8 +35,7 @@
         local_vars:
           root_var: "{{ config.terraform.local_vars.root_var }}"
 
-    - name: Setup terraform block
-      block:
+    - block:
         - name: Get output config file content
           set_fact:
             output_config_content: "{{ lookup('file', config.terraform.output_config_file) | from_json }}"
@@ -46,7 +43,7 @@
         - name: Set droplets facts
           set_fact:
             droplets: "{{ output_config_content.output_changes.local_config.after.droplets }}"
-            deploy_settings: "{{ output_config_content.output_changes.local_config.after.deploy_settings }}"
+            deploy_var_settings: "{{ output_config_content.output_changes.local_config.after.deploy_var_settings }}"
 
         - name: Deploy droplets preflights
           loop: "{{ droplets }}"
@@ -54,8 +51,9 @@
             name: traviss25.pac.deploy
             tasks_from: deploy
           vars:
+            preflight: true
             droplet: "{{ item }}"
-            deploy_settings: "{{ deploy_settings }}"
+            deploy_var_settings: "{{ deploy_var_settings }}"
 
         - name: Run apply terraform
           import_role:
@@ -69,6 +67,14 @@
         - debug:
             msg: "Terraform plan was NOT applied!"
 
+    - name: Grab ips for deploy tags
+      loop: "{{ droplets | subelements('tags') }}"
+      vars:
+        updated_list: "{{ deploy_tag_dict[item.1] | default([]) }}"
+      set_fact:
+        deploy_tag_dict: "{{ deploy_tag_dict | combine({item.1: updated_list + [item.0.ip] | unique }) }}"
+        ip_list: "{{ ip_list | [item.1] | unique }}"
+
     - name: Deploy droplets
       loop: "{{ droplets }}"
       include_role:
@@ -81,5 +87,12 @@
           remote_user: "{{ item.0.user }}"
       vars:
         preflight: false
+        deploy_type: local
         droplet: "{{ item }}"
-        deploy_settings: "{{ deploy_settings }}"
+        deploy_tag_dict: "{{ deploy_tag_dict }}"
+        deploy_var_settings: "{{ deploy_var_settings }}"
+
+    - name: Import inventory task
+      tasks_from: inventory.yml
+      vars:
+        deploy_type: local
