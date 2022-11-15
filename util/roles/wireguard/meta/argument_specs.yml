@@ -1,0 +1,57 @@
+---
+file_path: &file_path_ref
+  dir_path:
+    type: str
+    required: true
+    description: Directory path to file
+  filename: 
+    type: str
+    required: true
+    description: Name of file
+
+generate_keys_options: &generate_keys_options_ref
+  public_key_path:
+    type: dict
+    required: true
+    description: Public key path
+    options: *file_path_ref
+  private_key_path:
+    type: str
+    required: true
+    description: Private key path
+    options: *file_path_ref
+
+generate_config_options: &generate_config_options_ref
+  template:
+    type: dict
+    required: true
+    description: Template options
+    options:
+      type:
+        type: str
+        default: peer_to_peer
+        description: Template type to run 
+        choices:
+          - peer_to_peer
+      vars:
+        type: dict
+        required: true
+        description: Various vars for template
+  config_path:
+    type: dict
+    required: true
+    description: Absolute path to store config
+    options: *file_path_ref
+
+arguments_specs:
+  generate_config:
+    short_description: Generate wireguard config
+    options: *generate_config_options_ref
+
+  generate_config_preflight:
+    short_description: Generate wireguard config preflight
+    options: *generate_config_options_ref
+
+  generate_keys:
+    short_description: Generates wireguard public and private keys
+    options: *generate_keys_options_ref

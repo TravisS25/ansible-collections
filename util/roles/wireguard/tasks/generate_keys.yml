@@ -1,0 +1,31 @@
+---
+- name: Create private key directory
+  file:
+    path: "{{ public_key_path.dir_path }}"
+    state: directory
+
+- name: Create public key directory
+  file:
+    path: "{{ private_key_path.dir_path }}"
+    state: directory
+
+- name: Set absolute filepaths
+  set_fact:
+    public_full_path: "{{ (public_key_path.dir_path, public_key_path.filename) | path_join }}"
+    private_full_path: "{{ (private_key_path.dir_path, private_key_path.filename) | path_join }}"
+
+- name: Generate private key
+  shell: wg genkey | tee "{{ private_full_path }}"
+
+- name: Change file mode of private key
+  file:
+    path: "{{ private_full_path }}"
+    mode: 0600
+
+- name: Generate public key
+  shell: "cat {{ private_full_path }} | wg pubkey | tee {{ public_full_path }}"
+
+- name: Change file mode of public key
+  file:
+    path: "{{ public_full_path }}"
+    mode: 0644

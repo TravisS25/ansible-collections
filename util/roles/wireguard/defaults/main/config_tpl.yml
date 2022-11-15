@@ -1,0 +1,2 @@
+config_template_defaults:
+  template_type: peer_to_peer

@@ -1,0 +1,20 @@
+---
+- name: Set base config tpl defaults
+  set_fact:
+    template_type: "{{ template.type | default(config_template_defaults.template_type) }}"
+    config_full_path: "{{ (config_path.dir_path, config_path.filename) | path_join }}"
+
+- name: Create wireguard config directory
+  file:
+    path: "{{ config_path.dir_path }}"
+    state: directory
+
+- name: Generate wireguard peer to peer config
+  when: template_type == 'peer_to_peer'
+  template:
+    src: "{{ template_type }}.j2"
+    dest: "{{ config_full_path }}"
+    mode: 0600
+  vars:
+    root_var: "{{ template.vars }}"
+  

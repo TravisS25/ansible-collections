@@ -1,0 +1,23 @@
+[Interface]
+{% if 'name' in root_var.interface %}
+Name = {{ root_var.interface.name }}
+{% endif %}
+{% if 'address' in root_var.interface %}
+Address = {{ root_var.interface.address }}
+{% endif %}
+ListenPort = {{ root_var.interface.listen_port | default(51820) }}
+PrivateKey = {{ root_var.interface.private_key }}
+{% if 'dns' in root_var.interface %}
+DNS = {{ root_var.interface.dns }}
+{% endif %}
+
+{% for peer in root_var.peers %}
+
+[Peer]
+EndPoint = {{ peer.end_point }}
+PublicKey = {{ peer.public_key }}
+{% if 'allowed_ips' in peer %}
+AllowedIPs = {{ peer.allowed_ips }}
+{% endif %}
+
+{% endfor %}

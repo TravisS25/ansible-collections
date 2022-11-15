@@ -1,0 +1,22 @@
+---
+- name: Set generate config preflight facts
+  set_fact:
+    template_type: "{{ template.type | default(config_template_defaults.template_type) }}"
+
+- when: template_type == 'peer_to_peer'
+  block:
+    - name: Verify peer to peer variables are set
+      assert:
+        that:
+          - template.vars.interface is defined
+          - template.vars.interface.private_key is defined
+          - template.vars.interface.address is defined or template.vars.interface.name is defined
+          - template.vars.peers is defined
+          - template.vars.peers | type_debug == "list"
+    
+    - name: Verify peer object list
+      loop: "{{ template.vars.peers }}"
+      assert:
+        that:
+          - item.end_point is defined
+          - item.public_key is defined
