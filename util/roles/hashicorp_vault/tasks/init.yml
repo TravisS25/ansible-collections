@@ -3,7 +3,7 @@
   set_fact:
     secret_shares: "{{ secret_shares | default(init_defaults.secret_shares) }}"
     secret_threshold: "{{ secret_threshold | default(init_defaults.secret_threshold) }}"
-    base_url: "{{ host }}/v1"
+    base_url: "http://{{ host | default(init_defaults.host) }}{{ port | default(init_defaults.port) }}/v1"
     tmp_keys_file: /tmp/vault-keys.json
 
 - name: Determine if vault is initialized

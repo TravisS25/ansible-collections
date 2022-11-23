@@ -1,8 +1,0 @@
----
-vault_defaults:
-  secret_shares: 10
-  secret_threshold: 5
-  host: http://localhost:8200
-  action: start
-  root_pki:
-    common_name: root

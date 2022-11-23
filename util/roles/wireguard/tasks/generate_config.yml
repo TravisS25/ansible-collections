@@ -1,8 +1,8 @@
 ---
-- name: Set base config tpl defaults
+- name: Set base config template defaults
   set_fact:
     template_type: "{{ template.type | default(config_template_defaults.template_type) }}"
-    config_full_path: "{{ (config_path.dir_path, config_path.filename) | path_join }}"
+    config_full_path: "{{ (config_path.dir_path, config_path.filename) | path_join }}.conf"
 
 - name: Create wireguard config directory
   file:

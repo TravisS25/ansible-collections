@@ -2,8 +2,12 @@
 init_options: &init_options_ref
   host:
     type: str
-    default: http://localhost:8200
+    default: localhost
     description: Host vault is being served from
+  port:
+    type: str
+    default: :8200
+    description: Port vault server is listening on
   local_keys_file_store:
     type: str
     required: true

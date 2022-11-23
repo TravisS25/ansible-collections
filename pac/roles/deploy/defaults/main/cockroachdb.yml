@@ -1,3 +1,0 @@
-cockroachdb_defaults:
-  init_host: localhost:26257
-  insecure: true

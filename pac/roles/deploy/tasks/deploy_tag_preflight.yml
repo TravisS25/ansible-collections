@@ -1,5 +1,0 @@
----
-- name: Assert tag is in deploy settings
-  assert:
-    that: tag in deploy_var_settings
-  fail_msg: "Tag {{ tag }} not in deploy settings"

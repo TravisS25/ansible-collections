@@ -1,9 +1,0 @@
----
-
-- name: Import coredns docker action
-  import_role:
-    name: traviss25.pac.docker
-    tasks_from: coredns
-  vars:
-    action: start
-    config_file: "{{ root_var.config_file }}"
