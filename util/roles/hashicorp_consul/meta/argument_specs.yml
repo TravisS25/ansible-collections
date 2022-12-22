@@ -1,0 +1,63 @@
+---
+base_vault: &base_vault_ref
+  host:
+    type: str
+    default: localhost
+    description: Host vault is being served on
+  port:
+    type: str
+    default: :8200
+    description: Port vault server is listening on
+  token:
+    type: str
+    required: true
+    description: Token used to post secrets to vault
+
+init_acl_options: &init_acl_options_ref
+  vault:
+    type: dict
+    description: When set, will store secrets to vault
+    options:
+      <<: *base_vault_ref
+      kv:
+        type: dict
+        required: true
+        description: Settings to store acl token on key value store
+        options:
+          method:
+            type: str
+            choices:
+              - POST
+              - PUT
+              - PATCH
+            default: POST
+            description: HTTP method to use against request
+          api_path:
+            type: str
+            required: true
+            description: Api path to store acl token
+          key_name:
+            type: str
+            required: true
+            description: Key name used for acl token
+          options:
+            type: dict
+            description: Options used in kv request
+  host:
+    type: str
+    default: localhost
+    description: Host consul is being served from
+  port:
+    type: str
+    default: :8500
+    description: Port vault server is listening on
+  local_key_file_store:
+    type: str
+    description: |
+      Absolute file path on controller host to store acl keys
+      vault parameter will override this if set 
+
+argument_specs:
+  init_acl:
+    short_description: Initialize consul acl
+    options: *init_acl_options_ref

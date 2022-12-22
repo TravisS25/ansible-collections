@@ -1,0 +1,47 @@
+---
+- name: Set base consul deploy facts
+  set_fact:
+    base_url: "http://{{ host | default(init_defaults.host) }}{{ port | default(init_defaults.port) }}/v1"
+    tmp_token_file: /tmp/acl-token
+
+- name: Bootstrap consul acl
+  ignore_errors: true
+  uri:
+    url: "{{ base_url }}/acl/bootstrap"
+    method: PUT
+    body_format: json
+  register: acl_bs_res
+
+- when: acl_bs_res.status_code == 200
+  block:
+    - name: Post acl bootstrap token
+      when: vault is defined
+      uri:
+        url: "{{ vault.host }}{{ vault.port }}{{ vault.kv.api_path }}"
+        method: "{{ vault.kv.method }}"
+        headers:
+          X-Vault-Token: "{{ vault.token }}"
+        body_format: json
+        body:
+          options: "{{ vault.kv.options | default({}) }}"
+          body:
+            "{{ vault.kv.key_name }}": "{{ acl_bs_res.json['SecretID'] }}"
+
+    - when: vault is not defined
+      block:
+        - name: Create token to temp file
+          copy:
+            content: "{{ acl_bs_res.json['SecretID'] }}"
+            dest: "{{ tmp_token_file }}"
+
+        - name: Copy acl bootstrap token to control plane
+          fetch:
+            flat: true
+            src: "{{ tmp_token_file }}"
+            dest: "{{ local_key_file_store }}"
+
+        - name: Remove temp token file
+          file:
+            path: "{{ tmp_token_file }}"
+            state: absent
+

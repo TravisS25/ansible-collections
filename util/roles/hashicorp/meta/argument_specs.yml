@@ -34,14 +34,16 @@ policy_options: &policy_options_ref
   <<: *base_api_options_ref
 
 install_options: &install_options_ref
-  package:
-    type: str
+  packages:
+    type: list
+    elements: str
     required: true
     description: Hashicorp package to install
     choices:
       - terraform
       - packer
       - vault
+      - consul
       
 argument_specs:
   install:
